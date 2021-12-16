@@ -250,6 +250,16 @@ export class Workspace implements Glue42Workspaces.Workspace {
         });
     }
 
+    public async getIcon(): Promise<string> {
+        const controller = getData(this).controller;
+        return controller.getWorkspaceIcon(this.id);
+    }
+
+    public async setIcon(icon: string): Promise<void> {
+        const controller = getData(this).controller;
+        return controller.setWorkspaceIcon(this.id, icon);
+    }
+
     public getBox(predicate: (box: Glue42Workspaces.WorkspaceBox) => boolean): Glue42Workspaces.WorkspaceBox {
         checkThrowCallback(predicate);
         const children = getData(this).children;
@@ -399,8 +409,8 @@ export class Workspace implements Glue42Workspaces.Workspace {
         await this.refreshReference();
     }
 
-    public async pin(): Promise<void> {
-        await getData(this).controller.pinWorkspace(this.id);
+    public async pin(icon?: string): Promise<void> {
+        await getData(this).controller.pinWorkspace(this.id, icon);
         await this.refreshReference();
     }
 

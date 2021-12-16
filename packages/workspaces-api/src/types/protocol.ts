@@ -195,6 +195,10 @@ export interface FrameBoundsResult {
     };
 }
 
+export interface GetWorkspaceIconResult {
+    icon: string;
+}
+
 // #endregion
 
 // #region outgoing
@@ -364,4 +368,15 @@ export interface LockWorkspaceConfig {
         showSaveButton?: boolean;
     };
 }
+
+export interface PinWorkspaceConfig {
+    workspaceId: string;
+    icon?: string;
+}
+
+export interface SetWorkspaceIconConfig {
+    workspaceId: string;
+    icon?: string;
+}
+
 // #endregion

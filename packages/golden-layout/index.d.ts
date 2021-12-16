@@ -458,6 +458,11 @@ declare module '@glue42/golden-layout' {
              * Enables the pinned functionality of a row or column
              */
             isPinned?:boolean;
+
+            /**
+             * The icon related to the workspace - will be used for pinned icon.
+             */
+            icon?:string;
         }
 
         interface BaseItemConfig {
@@ -642,6 +647,11 @@ declare module '@glue42/golden-layout' {
              * The name of the layout with which the workspace is associated with
              */
             layoutName?: string;
+
+            /**
+             * Controls whether the tab should be opened as pinned or not 
+             */
+            isPinned?:boolean;
         }
 
         export interface Config {
@@ -1353,6 +1363,16 @@ declare module '@glue42/golden-layout' {
              * Function which is called on tab close button click. Similar to the document .onclick function
              */
             onCloseClick: () => void;
+
+            /**
+             * Changed the tab state to pinned which consists of placing the workspace tab at the front of the frame and hiding its title close and save buttons
+             */
+            pin(): void;
+
+            /**
+             * Restores the workspace tab from a pinned to a normal state - the title, close and save button are shown and the tab is moved to the end of the pinned tabs
+             */
+            unpin():void;
         }
 
         export interface EventEmitter {

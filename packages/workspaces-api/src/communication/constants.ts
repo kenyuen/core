@@ -36,7 +36,10 @@ import {
     lockWorkspaceDecoder,
     lockWindowDecoder,
     lockContainerDecoder,
-    frameBoundsResultDecoder
+    frameBoundsResultDecoder,
+    getWorkspaceIconResultDecoder,
+    pinWorkspaceDecoder,
+    setWorkspaceIconDecoder,
 } from "../shared/decoders";
 import { ControlOperation, StreamOperation } from "../types/protocol";
 import { WorkspaceEventType } from "../types/subscription";
@@ -77,7 +80,9 @@ type OperationsTypes = "isWindowInWorkspace" |
     "lockWindow" |
     "lockContainer" |
     "pinWorkspace" |
-    "unpinWorkspace";
+    "unpinWorkspace" |
+    "getWorkspaceIcon" |
+    "setWorkspaceIcon";
 type MethodsTypes = "control" | "frameStream" | "workspaceStream" | "containerStream" | "windowStream";
 
 export const webPlatformMethodName = "T42.Web.Platform.Control";
@@ -134,6 +139,8 @@ export const OPERATIONS: { [key in OperationsTypes]: ControlOperation } = {
     lockWorkspace: { name: "lockWorkspace", argsDecoder: lockWorkspaceDecoder, resultDecoder: voidResultDecoder },
     lockWindow: { name: "lockWindow", argsDecoder: lockWindowDecoder, resultDecoder: voidResultDecoder },
     lockContainer: { name: "lockContainer", argsDecoder: lockContainerDecoder, resultDecoder: voidResultDecoder },
-    pinWorkspace: { name: "pinWorkspace", argsDecoder: workspaceSelectorDecoder, resultDecoder: voidResultDecoder },
-    unpinWorkspace: { name: "unpinWorkspace", argsDecoder: workspaceSelectorDecoder, resultDecoder: voidResultDecoder }
+    pinWorkspace: { name: "pinWorkspace", argsDecoder: pinWorkspaceDecoder, resultDecoder: voidResultDecoder },
+    unpinWorkspace: { name: "unpinWorkspace", argsDecoder: workspaceSelectorDecoder, resultDecoder: voidResultDecoder },
+    getWorkspaceIcon: { name: "getWorkspaceIcon", argsDecoder: workspaceSelectorDecoder, resultDecoder: getWorkspaceIconResultDecoder },
+    setWorkspaceIcon: { name: "setWorkspaceIcon", argsDecoder: setWorkspaceIconDecoder, resultDecoder: voidResultDecoder }
 };

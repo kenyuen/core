@@ -48,7 +48,10 @@ import {
     LockRowConfig,
     LockColumnConfig,
     LockGroupConfig,
-    FrameBoundsResult
+    FrameBoundsResult,
+    GetWorkspaceIconResult,
+    PinWorkspaceConfig,
+    SetWorkspaceIconConfig
 } from "../types/protocol";
 import { WorkspaceEventType, WorkspaceEventAction } from "../types/subscription";
 import { Glue42Workspaces } from "../../workspaces";
@@ -270,17 +273,19 @@ export const workspaceDefinitionDecoder: Decoder<Glue42Workspaces.WorkspaceDefin
         reuseWorkspaceId: optional(nonEmptyStringDecoder),
         loadingStrategy: optional(loadingStrategyDecoder),
         allowDrop: optional(boolean()),
-        allowDropLeft:optional(boolean()),
-        allowDropTop:optional(boolean()),
-        allowDropRight:optional(boolean()),
-        allowDropBottom:optional(boolean()),
+        allowDropLeft: optional(boolean()),
+        allowDropTop: optional(boolean()),
+        allowDropRight: optional(boolean()),
+        allowDropBottom: optional(boolean()),
         allowExtract: optional(boolean()),
         showSaveButton: optional(boolean()),
         showCloseButton: optional(boolean()),
         allowSplitters: optional(boolean()),
         showWindowCloseButtons: optional(boolean()),
         showEjectButtons: optional(boolean()),
-        showAddWindowButtons: optional(boolean())
+        showAddWindowButtons: optional(boolean()),
+        icon: optional(nonEmptyStringDecoder),
+        isPinned: optional(boolean())
     })),
     frame: optional(object({
         reuseFrameId: optional(nonEmptyStringDecoder),
@@ -377,7 +382,8 @@ export const workspaceConfigResultDecoder: Decoder<WorkspaceConfigResult> = obje
     showEjectButtons: optional(boolean()),
     showWindowCloseButtons: optional(boolean()),
     widthInPx: optional(number()),
-    heightInPx: optional(number())
+    heightInPx: optional(number()),
+    isPinned: optional(boolean()),
 });
 
 // todo: remove number positionIndex when fixed
@@ -569,6 +575,10 @@ export const frameBoundsResultDecoder: Decoder<FrameBoundsResult> = object({
     })
 });
 
+export const getWorkspaceIconResultDecoder: Decoder<GetWorkspaceIconResult> = object({
+    icon: nonEmptyStringDecoder
+});
+
 export const resizeConfigDecoder: Decoder<Glue42Workspaces.ResizeConfig> = object({
     width: optional(positiveNumberDecoder),
     height: optional(positiveNumberDecoder),
@@ -757,5 +767,14 @@ export const lockGroupDecoder: Decoder<LockGroupConfig> = object({
     config: optional(groupLockConfigDecoder)
 });
 
-
 export const lockContainerDecoder: Decoder<LockContainerConfig> = oneOf<LockGroupConfig | LockColumnConfig | LockRowConfig>(lockRowDecoder, lockColumnDecoder, lockGroupDecoder);
+
+export const pinWorkspaceDecoder: Decoder<PinWorkspaceConfig> = object({
+    workspaceId: nonEmptyStringDecoder,
+    icon: optional(nonEmptyStringDecoder)
+});
+
+export const setWorkspaceIconDecoder: Decoder<SetWorkspaceIconConfig> = object({
+    workspaceId: nonEmptyStringDecoder,
+    icon: optional(nonEmptyStringDecoder) // to enable the user to remove the icon from the workspace altogether
+});
