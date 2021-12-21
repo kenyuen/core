@@ -462,7 +462,7 @@ declare module '@glue42/golden-layout' {
             /**
              * The icon related to the workspace - will be used for pinned icon.
              */
-            icon?:string;
+            icon?: string;
         }
 
         interface BaseItemConfig {
@@ -652,6 +652,11 @@ declare module '@glue42/golden-layout' {
              * Controls whether the tab should be opened as pinned or not 
              */
             isPinned?:boolean;
+
+            /**
+             * The icon associated with the layout
+             */
+            icon?:string;
         }
 
         export interface Config {
@@ -1373,6 +1378,11 @@ declare module '@glue42/golden-layout' {
              * Restores the workspace tab from a pinned to a normal state - the title, close and save button are shown and the tab is moved to the end of the pinned tabs
              */
             unpin():void;
+
+            /**
+             * Indicates whether the tab is pinned or not
+             */
+            isPinned: boolean;
         }
 
         export interface EventEmitter {

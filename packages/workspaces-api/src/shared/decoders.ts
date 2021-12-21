@@ -251,7 +251,9 @@ export const restoreWorkspaceConfigDecoder: Decoder<Glue42Workspaces.RestoreWork
         boolean()
     )),
     noTabHeader: optional(boolean()),
-    inMemoryLayout: optional(boolean())
+    inMemoryLayout: optional(boolean()),
+    icon: optional(nonEmptyStringDecoder),
+    isPinned: optional(boolean())
 }));
 
 export const openWorkspaceConfigDecoder: Decoder<OpenWorkspaceConfig> = object({
@@ -576,7 +578,7 @@ export const frameBoundsResultDecoder: Decoder<FrameBoundsResult> = object({
 });
 
 export const getWorkspaceIconResultDecoder: Decoder<GetWorkspaceIconResult> = object({
-    icon: nonEmptyStringDecoder
+    icon: optional(nonEmptyStringDecoder)
 });
 
 export const resizeConfigDecoder: Decoder<Glue42Workspaces.ResizeConfig> = object({

@@ -1984,4 +1984,31 @@ describe("properties: ", () => {
             expect(workspace.height).to.be.a("number");
         });
     });
+
+    describe("isPinned: Should", () => {
+        const iconForTesting = "icon";
+        afterEach(async () => {
+            const wsps = await glue.workspaces.getAllWorkspaces();
+            await Promise.all(wsps.map((wsp) => wsp.close()));
+        });
+
+        it("be false", async () => {
+            const workspace = await glue.workspaces.createWorkspace(threeContainersConfig);
+
+            expect(workspace.isPinned).to.be.false;
+        });
+
+        it("be true after its pinned", async () => {
+            const workspace = await glue.workspaces.createWorkspace(threeContainersConfig);
+            await workspace.pin(iconForTesting);
+            expect(workspace.isPinned).to.be.true;
+        });
+
+        it("be true after its unpinned", async () => {
+            const workspace = await glue.workspaces.createWorkspace(threeContainersConfig);
+            await workspace.pin(iconForTesting);
+            await workspace.unpin();
+            expect(workspace.isPinned).to.be.false;
+        });
+    });
 });

@@ -1474,7 +1474,7 @@ describe('createWorkspace() ', function () {
         });
     });
 
-    describe("isPinned Should ", () => {
+    describe("isPinned container Should ", () => {
         Array.from([true, false]).forEach((value) => {
             it(`set the isPinned property to ${value} when the config contains a row with isPinned ${value}`, async () => {
                 const config = {
@@ -1537,6 +1537,43 @@ describe('createWorkspace() ', function () {
             });
         });
     });
+
+    describe("isPinned workspace Should ", () => {
+        it("create a pinned workspace when the definition contains isPinned:true", async () => {
+            const workspace = await glue.workspaces.createWorkspace({
+                children: [{
+                    type: "group",
+                    children: [{
+                        type: "window",
+                        appName: "GTF_Glue_Isolated_Support"
+                    }]
+                }],
+                config: {
+                    isPinned: true
+                }
+            });
+
+            expect(workspace.isPinned).to.be.true;
+        });
+
+        it('create a normal workspace when the definition contains isPinned:false', async () => {
+            const workspace = await glue.workspaces.createWorkspace({
+                children: [{
+                    type: "group",
+                    children: [{
+                        type: "window",
+                        appName: "GTF_Glue_Isolated_Support"
+                    }]
+                }],
+                config: {
+                    isPinned: false
+                }
+            });
+
+            expect(workspace.isPinned).to.be.false;
+        });
+    });
+
     // SAVE CONFIG
     // after resolve the layout should be present in the layouts collection when specified in the save config
     // after resolve the layout should NOT be present in the layouts collection when there is no save config

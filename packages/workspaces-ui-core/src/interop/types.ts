@@ -162,6 +162,26 @@ export interface ResizeItemRequest {
     operationArguments: ResizeItemArguments;
 }
 
+export interface PinWorkspaceRequest {
+    operation: "pinWorkspace";
+    operationArguments: PinWorkspaceArguments;
+}
+
+export interface UnpinWorkspaceRequest {
+    operation: "unpinWorkspace";
+    operationArguments: WorkspaceSelector;
+}
+
+export interface GetWorkspaceIconRequest {
+    operation: "getWorkspaceIcon";
+    operationArguments: WorkspaceSelector;
+}
+
+export interface SetWorkspaceIconRequest {
+    operation: "setWorkspaceIcon";
+    operationArguments: SetWorkspaceIconArguments;
+}
+
 //#endregion
 
 //#region Arguments
@@ -200,6 +220,8 @@ export interface RestoreWorkspaceConfig {
     noTabHeader?: boolean;
     reuseWorkspaceId?: string;
     loadingStrategy?: LoadingStrategy;
+    icon?: string;
+    isPinned?: boolean;
 }
 
 export interface AddWindowArguments {
@@ -308,6 +330,17 @@ export interface ResizeItemArguments {
     height?: number;
 }
 
+export interface PinWorkspaceArguments {
+    workspaceId: string;
+    frameId?: string;
+    icon?: string;
+}
+
+export interface SetWorkspaceIconArguments {
+    workspaceId: string;
+    icon?: string;
+}
+
 //#endregion
 
 //#region Results
@@ -368,4 +401,5 @@ export type ControlArguments = SaveLayoutRequest | DeleteLayoutRequest |
     AddWorkspaceChildrenRequest | EjectRequest | CreateWorkspaceRequest | ForceLoadWindowRequest | FocusItemRequest |
     BundleWorkspaceRequest | IsWindowInWorkspaceRequest | GetFrameSummaryRequest | MoveFrameRequest | GetFrameSnapshotRequest |
     GetSnapshotRequest | MoveWindowToRequest | GenerateLayoutRequest | PingRequest | HibernateWorkspaceRequest | ResumeWorkspaceRequest |
-    LockWorkspaceRequest | LockContainerRequest | LockWindowRequest | ResizeItemRequest;
+    LockWorkspaceRequest | LockContainerRequest | LockWindowRequest | ResizeItemRequest | PinWorkspaceRequest | UnpinWorkspaceRequest |
+    GetWorkspaceIconRequest | SetWorkspaceIconRequest;

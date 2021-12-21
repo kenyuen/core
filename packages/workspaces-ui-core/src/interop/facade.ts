@@ -27,6 +27,8 @@ import {
     LockWindowArguments,
     LockWorkspaceArguments,
     ResizeItemArguments,
+    PinWorkspaceArguments,
+    SetWorkspaceIconArguments,
 } from "./types";
 import manager from "../manager";
 import store from "../state/store";
@@ -215,6 +217,21 @@ export class GlueFacade {
                     break;
                 case "resizeItem":
                     this.handleResizeItem(args.operationArguments);
+                    successCallback(undefined);
+                    break;
+                case "pinWorkspace":
+                    this.handlePinWorkspace(args.operationArguments);
+                    successCallback(undefined);
+                    break;
+                case "unpinWorkspace":
+                    this.handleUnpinWorkspace(args.operationArguments);
+                    successCallback(undefined);
+                    break;
+                case "getWorkspaceIcon":
+                    successCallback(this.handleGetWorkspaceIcon(args.operationArguments));
+                    break;
+                case "setWorkspaceIcon":
+                    this.handleSetWorkspaceIcon(args.operationArguments);
                     successCallback(undefined);
                     break;
                 default:
@@ -498,6 +515,27 @@ export class GlueFacade {
 
     private handleResizeItem(operationArguments: ResizeItemArguments): void {
         return manager.resizeItem(operationArguments);
+    }
+
+    private handlePinWorkspace(operationArguments: PinWorkspaceArguments): void {
+        return manager.pinWorkspace(operationArguments.workspaceId, operationArguments.icon);
+    }
+
+    private handleUnpinWorkspace(operationArguments: WorkspaceSelector): void {
+        return manager.unpinWorkspace(operationArguments.workspaceId);
+    }
+
+    private handleGetWorkspaceIcon(operationArguments: WorkspaceSelector): { icon?: string } {
+        const icon = manager.stateResolver.getWorkspaceIcon(operationArguments.workspaceId);
+        if (icon) {
+            return { icon };
+        } else {
+            return {};
+        }
+    }
+
+    private handleSetWorkspaceIcon(operationArguments: SetWorkspaceIconArguments): void {
+        manager.setWorkspaceIcon(operationArguments.workspaceId, operationArguments.icon);
     }
 
     private publishEventData(action: EventActionType, payload: EventPayload, type: "workspace" | "frame" | "box" | "window"): void {
