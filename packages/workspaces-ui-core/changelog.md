@@ -1,3 +1,5 @@
+1.8.0
+feat: pinned tabs support and workspace icons
 1.7.1
 chore: bump due to dependencies update
 1.7.0

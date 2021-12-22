@@ -1,3 +1,5 @@
+2.3.0
+feat: Pinned tabs
 2.2.1
 fix: Internal constraints logic improvement
 2.2.0

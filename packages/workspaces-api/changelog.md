@@ -1,3 +1,5 @@
+1.11.0
+feat: pinned tabs support and workspace icons
 1.10.1
 feat: saveLayout() now can also save meta data
 1.10.0
