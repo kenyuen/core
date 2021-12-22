@@ -120,7 +120,7 @@ export class WorkspacesController implements LibController {
         const incomingValidation = this.operations[operationName].dataDecoder?.run(workspacesData);
 
         if (incomingValidation && !incomingValidation.ok) {
-            throw new Error(`Workspace request for ${operationName} rejected, because the provided arguments did not pass the validation: ${JSON.stringify(workspacesData)}`);
+            throw new Error(`Workspace request for ${operationName} rejected, because the provided arguments did not pass the validation: ${JSON.stringify(incomingValidation.error)}`);
         }
 
         this.logger?.debug(`[${commandId}] ${operationName} command is valid with data: ${JSON.stringify(workspacesData)}`);
@@ -130,7 +130,7 @@ export class WorkspacesController implements LibController {
         const resultValidation = this.operations[operationName].resultDecoder?.run(result);
 
         if (resultValidation && !resultValidation.ok) {
-            throw new Error(`Workspace request for ${operationName} could not be completed, because the operation result did not pass the validation: ${JSON.stringify(result)}`);
+            throw new Error(`Workspace request for ${operationName} could not be completed, because the operation result did not pass the validation: ${JSON.stringify(resultValidation.error)}`);
         }
 
         this.logger?.trace(`[${commandId}] ${operationName} command was executed successfully`);

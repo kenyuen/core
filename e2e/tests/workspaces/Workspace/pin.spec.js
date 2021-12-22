@@ -135,5 +135,9 @@ describe("pin() Should", () => {
 
             expect(workspace.isPinned).to.be.true;
         });
+
+        it("pin the workspace using its icon passed from the configuration when the workspace already contains an icon", async () => {
+            const workspaceWithIcon = await glue.workspaces.createWorkspace(Object.assign({}, basicConfig, { config: { icon: iconForTesting } }))
+        });
     });
 });

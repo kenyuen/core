@@ -662,7 +662,7 @@ d='M224 448v-96h64v96l-32 64zM336 224v-160c48 0 80-32 80-64v0 0h-320c0 32 32 64 
         it("load all windows when the loadingStrategy is direct", async () => {
             let loadedWindowsCount = 0;
 
-            const directConfig = Object.assign(config, { config: { loadingStrategy: "direct" } });
+            const directConfig = Object.assign({}, config, { config: { loadingStrategy: "direct" } });
 
             let unsub = await glue.workspaces.onWindowLoaded(() => {
                 loadedWindowsCount++;
@@ -679,7 +679,7 @@ d='M224 448v-96h64v96l-32 64zM336 224v-160c48 0 80-32 80-64v0 0h-320c0 32 32 64 
         it("load only the visible windows when the loadingStrategy is lazy", async () => {
             let loadedWindowsCount = 0;
 
-            const lazyConfig = Object.assign(config, { config: { loadingStrategy: "lazy" } });
+            const lazyConfig = Object.assign({}, config, { config: { loadingStrategy: "lazy" } });
 
             let unsub = await glue.workspaces.onWindowLoaded(() => {
                 loadedWindowsCount++;
@@ -696,7 +696,7 @@ d='M224 448v-96h64v96l-32 64zM336 224v-160c48 0 80-32 80-64v0 0h-320c0 32 32 64 
 
         it("load all windows when the loadingStrategy is lazy and all windows are force loaded", async () => {
             let loadedWindowsCount = 0;
-            const lazyConfig = Object.assign(config, { config: { loadingStrategy: "lazy" } });
+            const lazyConfig = Object.assign({}, config, { config: { loadingStrategy: "lazy" } });
 
             let unsub = await glue.workspaces.onWindowLoaded(() => {
                 loadedWindowsCount++;
@@ -714,7 +714,7 @@ d='M224 448v-96h64v96l-32 64zM336 224v-160c48 0 80-32 80-64v0 0h-320c0 32 32 64 
 
         it("load all windows when the loadingStrategy is lazy and all windows are focused", async () => {
             let loadedWindowsCount = 0;
-            const lazyConfig = Object.assign(config, { config: { loadingStrategy: "lazy" } });
+            const lazyConfig = Object.assign({}, config, { config: { loadingStrategy: "lazy" } });
 
             let unsub = await glue.workspaces.onWindowLoaded(() => {
                 loadedWindowsCount++;
@@ -732,7 +732,7 @@ d='M224 448v-96h64v96l-32 64zM336 224v-160c48 0 80-32 80-64v0 0h-320c0 32 32 64 
 
         it("load one window for 4 seconds when the loadingStrategy is delayed", async () => {
             let loadedWindowsCount = 0;
-            const delayedConfig = Object.assign(config, { config: { loadingStrategy: "delayed" } });
+            const delayedConfig = Object.assign({}, config, { config: { loadingStrategy: "delayed" } });
 
             let unsub = await glue.workspaces.onWindowLoaded(() => {
                 loadedWindowsCount++;
@@ -749,7 +749,7 @@ d='M224 448v-96h64v96l-32 64zM336 224v-160c48 0 80-32 80-64v0 0h-320c0 32 32 64 
 
         it("load all windows when the loadingStrategy is delayed and all windows are force loaded", async () => {
             let loadedWindowsCount = 0;
-            const delayedConfig = Object.assign(config, { config: { loadingStrategy: "delayed" } });
+            const delayedConfig = Object.assign({}, config, { config: { loadingStrategy: "delayed" } });
 
             let unsub = await glue.workspaces.onWindowLoaded(() => {
                 loadedWindowsCount++;
@@ -767,7 +767,7 @@ d='M224 448v-96h64v96l-32 64zM336 224v-160c48 0 80-32 80-64v0 0h-320c0 32 32 64 
 
         it("load all windows when the loadingStrategy is delayed and all windows are focused", async () => {
             let loadedWindowsCount = 0;
-            const delayedConfig = Object.assign(config, { config: { loadingStrategy: "delayed" } });
+            const delayedConfig = Object.assign({}, config, { config: { loadingStrategy: "delayed" } });
 
             let unsub = await glue.workspaces.onWindowLoaded(() => {
                 loadedWindowsCount++;
@@ -793,7 +793,7 @@ d='M224 448v-96h64v96l-32 64zM336 224v-160c48 0 80-32 80-64v0 0h-320c0 32 32 64 
                 });
 
                 let frameClosed = false;
-                const directConfig = Object.assign(config, { config: { loadingStrategy: "delayed" } });
+                const directConfig = Object.assign({}, config, { config: { loadingStrategy: "delayed" } });
 
                 let unsub = await glue.windows.onWindowAdded(() => {
                     if (frameClosed) {
