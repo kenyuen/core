@@ -2142,7 +2142,7 @@ describe('restoreWorkspace() Should', function () {
         });
     });
 
-    describe.only("isPinned workspace Should ", () => {
+    describe("isPinned workspace Should ", () => {
         const newIcon = "newIcon";
 
         it("restore a workspace as pinned when the layout contains a pinned workspace", async () => {
@@ -2153,6 +2153,18 @@ describe('restoreWorkspace() Should', function () {
             const restoredWorkspace = await glue.workspaces.restoreWorkspace(layoutName);
 
             expect(restoredWorkspace.isPinned).to.be.true;
+        });
+
+        it("restore a workspace with the correct icon when the layout contains a pinned workspace", async () => {
+            const workspaceToSave = await glue.workspaces.createWorkspace(basicConfig);
+            await workspaceToSave.pin(iconForTesting);
+            await workspaceToSave.saveLayout(layoutName);
+            await workspaceToSave.close();
+
+            const restoredWorkspace = await glue.workspaces.restoreWorkspace(layoutName);
+            const icon = await restoredWorkspace.getIcon();
+            
+            expect(icon).to.eql(iconForTesting);
         });
 
         it("restore a workspace as pinned when the layout contains a pinned and locked workspace", async () => {

@@ -143,7 +143,7 @@ export class WorkspacesManager {
         }
 
         (savedConfig.workspacesOptions as WorkspaceOptionsWithTitle).title = options?.title || name;
-        savedConfig.workspacesOptions.icon = options?.icon;
+        savedConfig.workspacesOptions.icon = options?.icon ?? savedConfig.workspacesOptions.icon ;
 
         if (savedConfig && savedConfig.workspacesOptions && !savedConfig.workspacesOptions.name) {
             savedConfig.workspacesOptions.name = name;

@@ -1,4 +1,5 @@
 describe('saveLayout() Should ', function () {
+    const iconForTesting = "icon";
     const basicConfig = {
         children: [
             {
@@ -131,6 +132,41 @@ describe('saveLayout() Should ', function () {
         await workspace.refreshReference();
 
         expect(workspace.title).to.eql(title);
+    });
+
+    it("save a layout with isPinned:false when the workspace is not pinned", async () => {
+        const layoutName = gtf.getWindowName("layout.integration");
+
+        await workspace.saveLayout(layoutName);
+        const savedLayout = (await glue.workspaces.layouts.export()).find(l => l.name === layoutName);
+
+        expect(savedLayout.components[0].state.config.isPinned).to.eql(false);
+    });
+
+    it("save a layout with isPinned:true when the workspace is pinned", async () => {
+        const layoutName = gtf.getWindowName("layout.integration");
+        await workspace.pin(iconForTesting);
+        await workspace.saveLayout(layoutName);
+        const savedLayout = (await glue.workspaces.layouts.export()).find(l => l.name === layoutName);
+
+        expect(savedLayout.components[0].state.config.isPinned).to.eql(true);
+    });
+
+    it("save a layout with an icon when the workspace has an icon", async () => {
+        const layoutName = gtf.getWindowName("layout.integration");
+        await workspace.pin(iconForTesting);
+        await workspace.saveLayout(layoutName);
+        const savedLayout = (await glue.workspaces.layouts.export()).find(l => l.name === layoutName);
+
+        expect(savedLayout.components[0].state.config.icon).to.eql(iconForTesting);
+    });
+
+    it("save a layout without an icon when the workspace doesn't have an icon", async () => {
+        const layoutName = gtf.getWindowName("layout.integration");
+        await workspace.saveLayout(layoutName);
+        const savedLayout = (await glue.workspaces.layouts.export()).find(l => l.name === layoutName);
+
+        expect(savedLayout.components[0].state.config.icon).to.be.null; // the interop converts undefined to null
     });
 
     Array.from([[], {}, 42, undefined, null]).forEach((input) => {
