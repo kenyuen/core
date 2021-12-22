@@ -1,6 +1,7 @@
 describe("pin() Should", () => {
-    const iconForTesting = "icon";
-    const iconForTesting2 = "icon2";
+    const iconForTesting = `data:image/svg+xml,%3Csvg version='1.1' xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 512 512'%3E%3Cpath
+    d='M224 448v-96h64v96l-32 64zM336 224v-160c48 0 80-32 80-64v0 0h-320c0 32 32 64 80 64v160c-73.6 22.4-112 64-112 128h384c0-64-38.4-105.6-112-128z'%3E%3C/path%3E%3C/svg%3E%0A`;
+    const iconForTesting2 = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' height='24px' viewBox='0 0 24 24' width='24px' fill='%23FFFFFF'%3E%3Cpath d='M0 0h24v24H0z' fill='none'/%3E%3Cpath d='M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z'/%3E%3C/svg%3E`;
 
     const basicConfig = {
         children: [{
@@ -91,6 +92,25 @@ describe("pin() Should", () => {
 
         await emptyWorkspace.pin(iconForTesting);
         expect(emptyWorkspace.isPinned).to.be.true;
+    });
+
+    it("move the workspace to the front", async () => {
+        const firstWorkspace = await glue.workspaces.createWorkspace(emptyConfig);
+        const secondWorkspace = await glue.workspaces.createWorkspace(emptyConfig);
+        const thirdWorkspace = await glue.workspaces.createWorkspace(emptyConfig);
+
+        await thirdWorkspace.pin(iconForTesting);
+        expect(thirdWorkspace.positionIndex).to.eql(0);
+    });
+
+    it("move the workspace behind the other pinned workspace", async () => {
+        const firstWorkspace = await glue.workspaces.createWorkspace(emptyConfig);
+        const secondWorkspace = await glue.workspaces.createWorkspace(emptyConfig);
+        const thirdWorkspace = await glue.workspaces.createWorkspace(emptyConfig);
+
+        await thirdWorkspace.pin(iconForTesting);
+        await secondWorkspace.pin(iconForTesting);
+        expect(secondWorkspace.positionIndex).to.eql(1);
     });
 
     describe("", () => {

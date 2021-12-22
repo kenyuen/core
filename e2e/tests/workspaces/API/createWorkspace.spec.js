@@ -1,6 +1,7 @@
 // validated V2
-describe('createWorkspace() ', function () {
-
+describe.only('createWorkspace() ', function () {
+    const iconForTesting = `data:image/svg+xml,%3Csvg version='1.1' xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 512 512'%3E%3Cpath
+d='M224 448v-96h64v96l-32 64zM336 224v-160c48 0 80-32 80-64v0 0h-320c0 32 32 64 80 64v160c-73.6 22.4-112 64-112 128h384c0-64-38.4-105.6-112-128z'%3E%3C/path%3E%3C/svg%3E%0A`;
     before(() => coreReady);
 
     afterEach(async () => {
@@ -1545,11 +1546,12 @@ describe('createWorkspace() ', function () {
                     type: "group",
                     children: [{
                         type: "window",
-                        appName: "GTF_Glue_Isolated_Support"
+                        appName: "noGlueApp"
                     }]
                 }],
                 config: {
-                    isPinned: true
+                    isPinned: true,
+                    icon: iconForTesting
                 }
             });
 
@@ -1562,7 +1564,7 @@ describe('createWorkspace() ', function () {
                     type: "group",
                     children: [{
                         type: "window",
-                        appName: "GTF_Glue_Isolated_Support"
+                        appName: "noGlueApp"
                     }]
                 }],
                 config: {
@@ -1571,6 +1573,93 @@ describe('createWorkspace() ', function () {
             });
 
             expect(workspace.isPinned).to.be.false;
+        });
+
+        it("create a pinned workspace at the front when the definition contains isPinned:true", async () => {
+            await glue.workspaces.createWorkspace({
+                children: [{
+                    type: "group",
+                    children: [{
+                        type: "window",
+                        appName: "noGlueApp"
+                    }]
+                }],
+            });
+            const workspace = await glue.workspaces.createWorkspace({
+                children: [{
+                    type: "group",
+                    children: [{
+                        type: "window",
+                        appName: "noGlueApp"
+                    }]
+                }],
+                config: {
+                    isPinned: true,
+                    icon: iconForTesting
+                }
+            });
+
+            expect(workspace.positionIndex).to.eql(0);
+        });
+
+        it("create a pinned workspace behind the last pinned workspace when the definition contains isPinned:true", async () => {
+            await glue.workspaces.createWorkspace({
+                children: [{
+                    type: "group",
+                    children: [{
+                        type: "window",
+                        appName: "noGlueApp"
+                    }]
+                }],
+                config: {
+                    isPinned: true,
+                    icon: iconForTesting
+                }
+            });
+
+            await glue.workspaces.createWorkspace({
+                children: [{
+                    type: "group",
+                    children: [{
+                        type: "window",
+                        appName: "noGlueApp"
+                    }]
+                }]
+            });
+            const workspace = await glue.workspaces.createWorkspace({
+                children: [{
+                    type: "group",
+                    children: [{
+                        type: "window",
+                        appName: "noGlueApp"
+                    }]
+                }],
+                config: {
+                    isPinned: true,
+                    icon: iconForTesting
+
+                }
+            });
+
+            expect(workspace.positionIndex).to.eql(1);
+        });
+
+        it("create a pinned workspace when the definition contains isPinned:true", async () => {
+            const workspace = await glue.workspaces.createWorkspace({
+                children: [{
+                    type: "group",
+                    children: [{
+                        type: "window",
+                        appName: "noGlueApp"
+                    }]
+                }],
+                config: {
+                    isPinned: true,
+                    icon: iconForTesting
+                }
+            });
+
+            expect(workspace.isPinned).to.be.true;
         });
     });
 
