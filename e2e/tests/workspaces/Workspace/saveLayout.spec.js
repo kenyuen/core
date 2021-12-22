@@ -15,11 +15,13 @@ describe('saveLayout() Should ', function () {
         ]
     }
     let workspace = undefined;
+    let layoutName = undefined;
 
     before(() => coreReady);
 
     beforeEach(async () => {
         workspace = await glue.workspaces.createWorkspace(basicConfig);
+        layoutName = gtf.getWindowName("layout.integration");
     });
 
     afterEach(async () => {
@@ -34,7 +36,6 @@ describe('saveLayout() Should ', function () {
     });
 
     it("return a promise", () => {
-        const layoutName = gtf.getWindowName("layout.integration");
         const saveLayoutPromise = workspace.saveLayout(layoutName);
 
         expect(saveLayoutPromise.then).to.be.a("function");
@@ -42,12 +43,10 @@ describe('saveLayout() Should ', function () {
     });
 
     it("resolve", async () => {
-        const layoutName = gtf.getWindowName("layout.integration");
         await workspace.saveLayout(layoutName);
     });
 
     it("populate the summaries collection", async () => {
-        const layoutName = gtf.getWindowName("layout.integration");
         await workspace.saveLayout(layoutName);
         const summaries = await glue.workspaces.layouts.getSummaries();
 
@@ -57,8 +56,6 @@ describe('saveLayout() Should ', function () {
     });
 
     it("set the layoutName property to the layout name when the workspace is saved", async () => {
-        const layoutName = gtf.getWindowName("layout.integration");
-
         await workspace.saveLayout(layoutName);
         await workspace.refreshReference();
 
@@ -67,8 +64,6 @@ describe('saveLayout() Should ', function () {
 
     it("save the layout with a context when saveContext is true", async () => {
         const savedContext = { test: "42" };
-        const layoutName = gtf.getWindowName("layout.integration");
-
         await workspace.setContext(savedContext);
         await workspace.saveLayout(layoutName, { saveContext: true });
 
@@ -80,8 +75,6 @@ describe('saveLayout() Should ', function () {
 
     it("save the layout without context when saveContext is false", async () => {
         const savedContext = { test: "42" };
-        const layoutName = gtf.getWindowName("layout.integration");
-
         await workspace.setContext(savedContext);
         await workspace.saveLayout(layoutName, { saveContext: false });
 
@@ -93,8 +86,6 @@ describe('saveLayout() Should ', function () {
 
     it("save the layout without context when the options object is undefined", async () => {
         const savedContext = { test: "42" };
-        const layoutName = gtf.getWindowName("layout.integration");
-
         await workspace.setContext(savedContext);
         await workspace.saveLayout(layoutName);
 
@@ -105,8 +96,6 @@ describe('saveLayout() Should ', function () {
     });
 
     it("resolve the promise when the workspace has been hibernated", async () => {
-        const layoutName = gtf.getWindowName("layout.integration");
-
         await workspace.frame.createWorkspace(basicConfig);
         await workspace.hibernate();
 
@@ -114,8 +103,6 @@ describe('saveLayout() Should ', function () {
     });
 
     it("save a layout that can be restored when the workspace has been hibernated", async () => {
-        const layoutName = gtf.getWindowName("layout.integration");
-
         await workspace.frame.createWorkspace(basicConfig);
         await workspace.hibernate();
 
@@ -169,6 +156,20 @@ describe('saveLayout() Should ', function () {
 
         expect(savedLayout.components[0].state.config.icon).to.be.null; // the interop converts undefined to null
     });
+    
+    it("successfully save the passed metadata", async () => {
+        const metadata = {
+            test: 42
+        };
+        const layoutName = gtf.getWindowName("layout.integration");
+
+        await workspace.saveLayout(layoutName, { metadata });
+
+        const allLayouts = await glue.workspaces.layouts.export();
+        const currentLayout = allLayouts.find(l => l.name === layoutName);
+
+        expect(currentLayout.metadata).to.eql(metadata);
+    });
 
     Array.from([[], {}, 42, undefined, null]).forEach((input) => {
         it(`reject when the layout name is ${JSON.stringify(input)}`, (done) => {
@@ -176,5 +177,5 @@ describe('saveLayout() Should ', function () {
                 .then(() => done("Should not resolve"))
                 .catch(() => done());
         });
-    })
+    });
 });

@@ -1,7 +1,7 @@
 import { Glue42Workspaces } from "@glue42/workspaces-api";
 import { Decoder, string, number, object, constant, oneOf, optional, array, boolean, anyJson, lazy } from "decoder-validate";
 import { Glue42Web } from "../../web";
-import { AppsImportOperation, AppHelloSuccess, ApplicationData, ApplicationStartConfig, AppManagerOperationTypes, AppRemoveConfig, BaseApplicationData, BasicInstanceData, InstanceData, AppsExportOperation, FDC3Definition } from "../appManager/protocol";
+import { AppsImportOperation, AppHelloSuccess, ApplicationData, ApplicationStartConfig, AppManagerOperationTypes, AppRemoveConfig, BaseApplicationData, BasicInstanceData, InstanceData, AppsExportOperation, FDC3Definition, AppDirectoryStateChange } from "../appManager/protocol";
 import { AllLayoutsFullConfig, AllLayoutsSummariesResult, GetAllLayoutsConfig, LayoutsImportConfig, LayoutsOperationTypes, OptionalSimpleLayoutResult, SimpleLayoutConfig, SimpleLayoutResult } from "../layouts/protocol";
 import { HelloSuccess, OpenWindowConfig, CoreWindowData, WindowHello, WindowOperationTypes, SimpleWindowCommand, WindowTitleConfig, WindowBoundsResult, WindowMoveResizeConfig, WindowUrlResult, FrameWindowBoundsResult } from "../windows/protocol";
 import { IntentsOperationTypes, WrappedIntentFilter, WrappedIntents } from "../intents/protocol";
@@ -11,14 +11,15 @@ import { NotificationEventPayload, NotificationsOperationTypes, PermissionQueryR
 export const nonEmptyStringDecoder: Decoder<string> = string().where((s) => s.length > 0, "Expected a non-empty string");
 export const nonNegativeNumberDecoder: Decoder<number> = number().where((num) => num >= 0, "Expected a non-negative number");
 
-export const libDomainDecoder: Decoder<LibDomains> = oneOf<"system" | "windows" | "appManager" | "layouts" | "intents" | "notifications" | "channels">(
+export const libDomainDecoder: Decoder<LibDomains> = oneOf<"system" | "windows" | "appManager" | "layouts" | "intents" | "notifications" | "channels" | "extension">(
     constant("system"),
     constant("windows"),
     constant("appManager"),
     constant("layouts"),
     constant("intents"),
     constant("notifications"),
-    constant("channels")
+    constant("channels"),
+    constant("extension")
 );
 
 export const windowOperationTypesDecoder: Decoder<WindowOperationTypes> = oneOf<"openWindow" | "getBounds" | "getFrameBounds" | "windowHello" | "windowAdded" | "windowRemoved" | "getUrl" | "moveResize" | "focus" | "close" | "getTitle" | "setTitle">(
@@ -36,11 +37,9 @@ export const windowOperationTypesDecoder: Decoder<WindowOperationTypes> = oneOf<
     constant("setTitle")
 );
 
-export const appManagerOperationTypesDecoder: Decoder<AppManagerOperationTypes> = oneOf<"appHello" | "applicationAdded" | "applicationRemoved" | "applicationChanged" | "instanceStarted" | "instanceStopped" | "applicationStart" | "instanceStop" | "clear">(
+export const appManagerOperationTypesDecoder: Decoder<AppManagerOperationTypes> = oneOf<"appHello" | "appDirectoryStateChange" | "instanceStarted" | "instanceStopped" | "applicationStart" | "instanceStop" | "clear">(
     constant("appHello"),
-    constant("applicationAdded"),
-    constant("applicationRemoved"),
-    constant("applicationChanged"),
+    constant("appDirectoryStateChange"),
     constant("instanceStarted"),
     constant("instanceStopped"),
     constant("applicationStart"),
@@ -182,7 +181,7 @@ export const fdc3AppDefinitionDecoder: Decoder<FDC3Definition> = object({
     name: nonEmptyStringDecoder,
     title: optional(nonEmptyStringDecoder),
     version: optional(nonEmptyStringDecoder),
-    appId: nonEmptyStringDecoder,
+    appId: optional(nonEmptyStringDecoder),
     manifest: nonEmptyStringDecoder,
     manifestType: nonEmptyStringDecoder,
     tooltip: optional(nonEmptyStringDecoder),
@@ -205,7 +204,8 @@ export const applicationDefinitionDecoder: Decoder<Glue42Web.AppManager.Definiti
     icon: optional(nonEmptyStringDecoder),
     caption: optional(nonEmptyStringDecoder),
     details: applicationDetailsDecoder,
-    intents: optional(array(intentDefinitionDecoder))
+    intents: optional(array(intentDefinitionDecoder)),
+    hidden: optional(boolean())
 });
 
 export const allApplicationDefinitionsDecoder: Decoder<Glue42Web.AppManager.Definition | FDC3Definition> = oneOf<Glue42Web.AppManager.Definition | FDC3Definition>(
@@ -250,6 +250,12 @@ export const baseApplicationDataDecoder: Decoder<BaseApplicationData> = object({
     caption: optional(nonEmptyStringDecoder)
 });
 
+export const appDirectoryStateChangeDecoder: Decoder<AppDirectoryStateChange> = object({
+    appsAdded: array(baseApplicationDataDecoder),
+    appsChanged: array(baseApplicationDataDecoder),
+    appsRemoved: array(baseApplicationDataDecoder)
+});
+
 export const appHelloSuccessDecoder: Decoder<AppHelloSuccess> = object({
     apps: array(applicationDataDecoder)
 });
@@ -273,7 +279,8 @@ export const applicationStartConfigDecoder: Decoder<ApplicationStartConfig> = ob
         constant("left"),
         constant("right"),
         constant("bottom")
-    ))
+    )),
+    forceChromeTab: optional(boolean())
 });
 
 export const layoutTypeDecoder: Decoder<Glue42Web.Layouts.LayoutType> = oneOf<"Global" | "Activity" | "ApplicationDefault" | "Swimlane" | "Workspace">(

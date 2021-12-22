@@ -10,7 +10,7 @@ import { IoC } from "../../shared/ioc";
 import { PromiseWrap } from "../../shared/promisePlus";
 import { getRelativeBounds } from "../../shared/utils";
 import { appHelloDecoder, appHelloSuccessDecoder, applicationStartConfigDecoder, appManagerOperationTypesDecoder, appRemoveConfigDecoder, appsExportOperationDecoder, appsImportOperationDecoder, appsRemoteRegistrationDecoder, basicInstanceDataDecoder, instanceDataDecoder } from "./decoders";
-import { AppsImportOperation, AppHello, AppHelloSuccess, ApplicationData, AppManagerOperationTypes, BaseApplicationData, BasicInstanceData, InstanceData, InstanceLock, InstanceProcessInfo, AppsExportOperation, AppRemoveConfig, AppsRemoteRegistration } from "./types";
+import { AppsImportOperation, AppHello, AppHelloSuccess, ApplicationData, AppManagerOperationTypes, BasicInstanceData, InstanceData, InstanceLock, InstanceProcessInfo, AppsExportOperation, AppRemoveConfig, AppsRemoteRegistration, AppDirectoryStateChange } from "./types";
 import logger from "../../shared/logger";
 import { workspaceWindowDataDecoder } from "../workspaces/decoders";
 import { simpleWindowDecoder } from "../windows/decoders";
@@ -58,11 +58,10 @@ export class ApplicationsController implements LibController {
 
         this.config = config.applications;
 
-        this.appDirectory.start({
+        await this.appDirectory.start({
             config: config.applications,
-            onAdded: (data: BaseApplicationData) => this.emitStreamData("applicationAdded", data),
-            onChanged: (data: BaseApplicationData) => this.emitStreamData("applicationChanged", data),
-            onRemoved: (data: BaseApplicationData) => this.emitStreamData("applicationRemoved", data),
+            appsStateChange: (data: AppDirectoryStateChange) => this.emitStreamData("appDirectoryStateChange", data),
+            sequelizer: this.ioc.createSequelizer()
         });
 
         this.started = true;
@@ -133,7 +132,7 @@ export class ApplicationsController implements LibController {
 
         this.logger?.trace(`[${commandId}] handling application start command for application: ${config.name}`);
 
-        const appDefinition = this.appDirectory.getAll().find((app) => app.name === config.name);
+        const appDefinition = (await this.appDirectory.getAll()).find((app) => app.name === config.name);
 
         if (!appDefinition) {
             throw new Error(`Cannot start an instance of application: ${config.name}, because it is not found.`);
@@ -146,7 +145,9 @@ export class ApplicationsController implements LibController {
 
         const openBounds = await this.getStartingBounds(appDefinition.createOptions, config, commandId);
 
-        const options = `left=${openBounds.left},top=${openBounds.top},width=${openBounds.width},height=${openBounds.height}`;
+        const options = config.forceChromeTab ?
+            undefined :
+            `left=${openBounds.left},top=${openBounds.top},width=${openBounds.width},height=${openBounds.height}`;
 
         this.logger?.trace(`[${commandId}] open arguments are valid, opening to bounds: ${options}`);
 
@@ -231,7 +232,7 @@ export class ApplicationsController implements LibController {
 
         const allInstances = this.sessionStorage.getAllInstancesData();
 
-        const allAppsFull = this.appDirectory.getAll().map<ApplicationData>((app) => {
+        const allAppsFull = (await this.appDirectory.getAll()).map<ApplicationData>((app) => {
 
             const appInstances = allInstances.filter((inst) => inst.applicationName === app.name);
 
@@ -306,7 +307,7 @@ export class ApplicationsController implements LibController {
             throw new Error(`[${commandId}] cannot accept remote apps from the protocol, because there is an active remote configuration.`);
         }
 
-        this.appDirectory.processAppDefinitions(config.definitions, { mode: "replace", type: "remote" });
+        await this.appDirectory.processAppDefinitions(config.definitions, { mode: "replace", type: "remote" });
 
         this.logger?.trace(`[${commandId}] remote bypass command completed`);
         return;
@@ -315,7 +316,7 @@ export class ApplicationsController implements LibController {
     public async handleImport(config: AppsImportOperation, commandId: string): Promise<void> {
         this.logger?.trace(`[${commandId}] handling import command`);
 
-        this.appDirectory.processAppDefinitions(config.definitions, { type: "inmemory", mode: config.mode });
+        await this.appDirectory.processAppDefinitions(config.definitions, { type: "inmemory", mode: config.mode });
 
         this.logger?.trace(`[${commandId}] import command completed`);
         return;
@@ -324,18 +325,18 @@ export class ApplicationsController implements LibController {
     public async handleRemove(config: AppRemoveConfig, commandId: string): Promise<void> {
         this.logger?.trace(`[${commandId}] handling remove command for ${config.name}`);
 
-        const removed = this.appDirectory.removeInMemory(config.name);
+        const removed = await this.appDirectory.removeInMemory(config.name);
 
         if (removed) {
             this.logger?.trace(`definition ${removed.name} removed successfully`);
-            this.emitStreamData("applicationRemoved", removed);
+            this.emitStreamData("appDirectoryStateChange", { appsRemoved: [removed], appsAdded: [], appsChanged: [] });
         }
     }
 
     public async handleExport(_: any, commandId: string): Promise<AppsExportOperation> {
         this.logger?.trace(`[${commandId}] handling export command`);
 
-        const definitions = this.appDirectory.exportInMemory();
+        const definitions = await this.appDirectory.exportInMemory();
 
         this.logger?.trace(`[${commandId}] export command successful`);
 
@@ -345,7 +346,7 @@ export class ApplicationsController implements LibController {
     public async handleClear(_: any, commandId: string): Promise<void> {
         this.logger?.trace(`[${commandId}] handling clear command`);
 
-        this.appDirectory.processAppDefinitions([], { type: "inmemory", mode: "replace" });
+        await this.appDirectory.processAppDefinitions([], { type: "inmemory", mode: "replace" });
 
         this.logger?.trace(`[${commandId}] all in-memory apps are cleared`);
     }
@@ -373,7 +374,9 @@ export class ApplicationsController implements LibController {
             throw new Error(`Cannot register application with config: ${JSON.stringify(data)}, because no app name was found`);
         }
 
-        if (!this.appDirectory.getAll().some((app) => app.name === data.appName)) {
+        const allAppDefinitions = await this.appDirectory.getAll();
+
+        if (!allAppDefinitions.some((app) => app.name === data.appName)) {
             throw new Error(`Cannot register application with config: ${JSON.stringify(data)}, because no app with this name name was found`);
         }
 
@@ -410,18 +413,19 @@ export class ApplicationsController implements LibController {
         this.emitStreamData("instanceStarted", config.data);
     }
 
-    private emitStreamData(operation: "applicationAdded" | "applicationRemoved" | "applicationChanged" | "instanceStarted" | "instanceStopped", data: any): void {
+    private emitStreamData(operation: "appDirectoryStateChange" | "instanceStarted" | "instanceStopped", data: any): void {
         this.logger?.trace(`sending notification of event: ${operation} with data: ${JSON.stringify(data)}`);
         this.glueController.pushSystemMessage("appManager", operation, data);
     }
 
     private async getStartingBounds(appDefOptions: Glue42Web.AppManager.DefinitionDetails, openOptions: ApplicationStartConfig, commandId: string): Promise<Glue42Web.Windows.Bounds> {
-        const openBounds = Object.assign(
-            {},
-            this.defaultBounds,
-            { top: appDefOptions.top, left: appDefOptions.left, width: appDefOptions.width, height: appDefOptions.height },
-            { top: openOptions.top, left: openOptions.left, width: openOptions.width, height: openOptions.height }
-        );
+
+        const openBounds: Glue42Web.Windows.Bounds = {
+            top: openOptions.top || appDefOptions.top || this.defaultBounds.top,
+            left: openOptions.left || appDefOptions.left || this.defaultBounds.left,
+            width: openOptions.width || appDefOptions.width || this.defaultBounds.width,
+            height: openOptions.height || appDefOptions.height || this.defaultBounds.height
+        };
 
         if (!openOptions.relativeTo) {
             return openBounds;

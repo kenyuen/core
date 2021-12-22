@@ -7,7 +7,7 @@ import { allApplicationDefinitionsDecoder, appManagerOperationTypesDecoder, impo
 import { IoC } from "../shared/ioc";
 import { LibController, ParsedConfig } from "../shared/types";
 import { WindowHello } from "../windows/protocol";
-import { AppsImportOperation, AppHelloSuccess, ApplicationStartConfig, AppRemoveConfig, InstanceData, operations, BaseApplicationData, AppsExportOperation, DefinitionParseResult } from "./protocol";
+import { AppsImportOperation, AppHelloSuccess, ApplicationStartConfig, AppRemoveConfig, InstanceData, operations, BaseApplicationData, AppsExportOperation, DefinitionParseResult, AppDirectoryStateChange } from "./protocol";
 import {
     default as CallbackRegistryFactory,
     CallbackRegistry,
@@ -15,6 +15,8 @@ import {
 } from "callback-registry";
 
 export class AppManagerController implements LibController {
+    private baseApplicationsTimeoutMS = 60000;
+    private appImportTimeoutMS = 20;
     private readonly registry: CallbackRegistry = CallbackRegistryFactory();
     private ioc!: IoC;
     private bridge!: GlueBridge;
@@ -80,6 +82,7 @@ export class AppManagerController implements LibController {
 
     public async startApplication(appName: string, context?: object, options?: Glue42Web.AppManager.ApplicationStartOptions): Promise<Glue42Web.AppManager.Instance> {
         // reuseId is a hidden property for workspaces-only use
+        // forceChromeTab is a hidden property for extension use only
         const startOptions: ApplicationStartConfig = {
             name: appName,
             waitForAGMReady: options?.waitForAGMReady ?? true,
@@ -90,7 +93,8 @@ export class AppManagerController implements LibController {
             height: options?.height,
             relativeTo: options?.relativeTo,
             relativeDirection: options?.relativeDirection,
-            id: (options as any)?.reuseId
+            id: (options as any)?.reuseId,
+            forceChromeTab: (options as any)?.forceTab
         };
 
         const openResult = await this.bridge.send<ApplicationStartConfig, InstanceData>("appManager", operations.applicationStart, startOptions);
@@ -123,11 +127,15 @@ export class AppManagerController implements LibController {
     }
 
     private addOperationsExecutors(): void {
-        operations.applicationAdded.execute = this.handleApplicationAddedMessage.bind(this);
-        operations.applicationRemoved.execute = this.handleApplicationRemovedMessage.bind(this);
-        operations.applicationChanged.execute = this.handleApplicationChangedMessage.bind(this);
+        operations.appDirectoryStateChange.execute = this.handleAppDirectoryStateChange.bind(this);
         operations.instanceStarted.execute = this.handleInstanceStartedMessage.bind(this);
         operations.instanceStopped.execute = this.handleInstanceStoppedMessage.bind(this);
+    }
+
+    private async handleAppDirectoryStateChange(data: AppDirectoryStateChange): Promise<void> {
+        data.appsAdded.forEach(this.handleApplicationAddedMessage.bind(this));
+        data.appsChanged.forEach(this.handleApplicationChangedMessage.bind(this));
+        data.appsRemoved.forEach(this.handleApplicationRemovedMessage.bind(this));
     }
 
     private onAppAdded(callback: (app: Glue42Web.AppManager.Application) => any): UnsubscribeFunction {
@@ -238,6 +246,10 @@ export class AppManagerController implements LibController {
             throw new Error("Import must be called with an array of definitions");
         }
 
+        if (definitions.length > 10000) {
+            throw new Error("Cannot import more than 10000 app definitions in Glue42 Core.");
+        }
+
         const parseResult = definitions.reduce<DefinitionParseResult>((soFar, definition) => {
 
             const decodeResult = allApplicationDefinitionsDecoder.run(definition);
@@ -251,7 +263,9 @@ export class AppManagerController implements LibController {
             return soFar;
         }, { valid: [], invalid: [] });
 
-        await this.bridge.send<AppsImportOperation, void>("appManager", operations.import, { definitions: parseResult.valid, mode });
+        const responseTimeout = this.baseApplicationsTimeoutMS + this.appImportTimeoutMS * parseResult.valid.length;
+
+        await this.bridge.send<AppsImportOperation, void>("appManager", operations.import, { definitions: parseResult.valid, mode }, { methodResponseTimeoutMs: responseTimeout });
 
         return {
             imported: parseResult.valid.map((valid) => valid.name),
@@ -262,16 +276,16 @@ export class AppManagerController implements LibController {
     private async remove(name: string): Promise<void> {
         nonEmptyStringDecoder.runWithException(name);
 
-        await this.bridge.send<AppRemoveConfig, void>("appManager", operations.remove, { name });
+        await this.bridge.send<AppRemoveConfig, void>("appManager", operations.remove, { name }, { methodResponseTimeoutMs: this.baseApplicationsTimeoutMS });
     }
 
     private async clear(): Promise<void> {
-        await this.bridge.send<void, void>("appManager", operations.clear, undefined);
+        await this.bridge.send<void, void>("appManager", operations.clear, undefined, { methodResponseTimeoutMs: this.baseApplicationsTimeoutMS });
     }
 
     private async export(): Promise<Glue42Web.AppManager.Definition[]> {
 
-        const response = await this.bridge.send<void, AppsExportOperation>("appManager", operations.export, undefined);
+        const response = await this.bridge.send<void, AppsExportOperation>("appManager", operations.export, undefined, { methodResponseTimeoutMs: this.baseApplicationsTimeoutMS });
 
         return response.definitions;
     }
@@ -291,7 +305,7 @@ export class AppManagerController implements LibController {
     }
 
     private async registerWithPlatform(): Promise<void> {
-        const result = await this.bridge.send<WindowHello, AppHelloSuccess>("appManager", operations.appHello, { windowId: this.actualWindowId });
+        const result = await this.bridge.send<WindowHello, AppHelloSuccess>("appManager", operations.appHello, { windowId: this.actualWindowId }, { methodResponseTimeoutMs: this.baseApplicationsTimeoutMS });
 
         this.logger.trace("the platform responded to the hello message with a full list of apps");
 

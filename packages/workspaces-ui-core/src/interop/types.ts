@@ -212,6 +212,7 @@ export interface SaveLayoutArguments {
     name: string;
     workspaceId?: string;
     saveContext?: boolean;
+    metadata?: object;
 }
 
 export interface RestoreWorkspaceConfig {

@@ -686,7 +686,8 @@ export const windowStreamDataDecoder: Decoder<WindowStreamData> = object({
 export const workspaceLayoutSaveConfigDecoder: Decoder<Glue42Workspaces.WorkspaceLayoutSaveConfig> = object({
     name: nonEmptyStringDecoder,
     workspaceId: nonEmptyStringDecoder,
-    saveContext: optional(boolean())
+    saveContext: optional(boolean()),
+    metadata: optional(object())
 });
 
 export const workspaceSelectorDecoder: Decoder<WorkspaceSelector> = object({
