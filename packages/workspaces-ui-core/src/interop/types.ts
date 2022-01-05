@@ -1,4 +1,4 @@
-import { WorkspaceItem, WorkspaceSnapshot, RowItem, ColumnItem, GroupItem, WindowDefinition, LoadingStrategy } from "../types/internal";
+import { WorkspaceItem, WorkspaceSnapshot, RowItem, ColumnItem, GroupItem, WindowDefinition, LoadingStrategy, WindowItem } from "../types/internal";
 
 //#region Requests
 
@@ -223,6 +223,7 @@ export interface RestoreWorkspaceConfig {
     loadingStrategy?: LoadingStrategy;
     icon?: string;
     isPinned?: boolean;
+    isSelected?: boolean;
 }
 
 export interface AddWindowArguments {
@@ -242,8 +243,25 @@ export interface AddWorkspaceChildrenArguments {
     children: Array<ColumnItem | RowItem | GroupItem>;
 }
 
-export interface CreateWorkspaceArguments extends WorkspaceItem {
-    // add the save config
+export interface CreateWorkspaceArguments {
+    type?: "workspace";
+    children: Array<RowItem | ColumnItem | GroupItem | WindowItem>;
+    config?: {
+        name?: string;
+        context?: object;
+        reuseWorkspaceId?: string;
+        minWidth?: number;
+        maxWidth?: number;
+        minHeight?: number;
+        maxHeight?: number;
+        allowDrop?: boolean;
+        allowExtract?: boolean;
+        showEjectButtons?: boolean;
+        allowSplitters?: boolean;
+        showWindowCloseButtons?: boolean;
+        showAddWindowButtons?: boolean;
+        isSelected?: boolean;
+    };
     saveConfig?: object;
     context?: object;
     loadingStrategy: LoadingStrategy;

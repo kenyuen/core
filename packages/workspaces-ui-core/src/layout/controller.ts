@@ -306,9 +306,17 @@ export class LayoutController {
             title: (config?.workspacesOptions as any)?.title || this._configFactory.getWorkspaceTitle(store.workspaceTitles)
         };
 
+        let shouldActivateChild = true;
+
+        if (componentConfig.noTabHeader === true) {
+            shouldActivateChild = false;
+        } else if (typeof config.workspacesOptions.selected === "boolean") {
+            shouldActivateChild = config.workspacesOptions.selected;
+        }
+
         this.registerWorkspaceComponent(id);
 
-        stack.addChild(componentConfig, undefined, !componentConfig.noTabHeader);
+        stack.addChild(componentConfig, undefined, shouldActivateChild);
 
         await this.initWorkspaceContents(id, config, false);
 
@@ -1297,8 +1305,8 @@ export class LayoutController {
 
         if (!(config as GoldenLayout.Config).settings) {
             (config as GoldenLayout.Config).settings = this._configFactory.getDefaultWorkspaceSettings();
-
         }
+        
         if (config.type && config.type !== "workspace") {
             // Wrap the component in a column when you don't have a workspace;
             config = {
@@ -1314,6 +1322,10 @@ export class LayoutController {
         const optionsFromConfig = (config as GoldenLayout.Config).workspacesOptions;
 
         const mergedOptions = useWorkspaceSpecificConfig ? Object.assign({}, optionsFromItem, optionsFromConfig) : optionsFromConfig;
+
+        if(typeof mergedOptions.selected ==="boolean"){
+            delete mergedOptions.selected;
+        } 
 
         workspaceContentItem.config.workspacesConfig = mergedOptions;
         (config as GoldenLayout.Config).workspacesOptions = mergedOptions;
@@ -1605,6 +1617,10 @@ export class LayoutController {
                         uiExecutor.waitForTransition(tab.element[0]).then(() => {
                             this._tabObserver.refreshTabsMaxWidth((tab.contentItem.parent as GoldenLayout.Stack).header.tabsContainer);
                         });
+                    }
+
+                    if (tab.contentItem?.config?.workspacesConfig?.selected) {
+                        delete tab.contentItem.config.workspacesConfig.selected;
                     }
                 });
 

@@ -1,4 +1,4 @@
-describe('restoreWorkspace() Should', function () {
+describe.only('restoreWorkspace() Should', function () {
     const iconForTesting = `data:image/svg+xml,%3Csvg version='1.1' xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 512 512'%3E%3Cpath
     d='M224 448v-96h64v96l-32 64zM336 224v-160c48 0 80-32 80-64v0 0h-320c0 32 32 64 80 64v160c-73.6 22.4-112 64-112 128h384c0-64-38.4-105.6-112-128z'%3E%3C/path%3E%3C/svg%3E%0A`;
     const windowConfig = {
@@ -2267,6 +2267,50 @@ describe('restoreWorkspace() Should', function () {
             const restoredWorkspace = await glue.workspaces.restoreWorkspace(layoutName, { isPinned: true, icon: newIcon });
 
             expect(restoredWorkspace.positionIndex).to.eql(1);
+        });
+    });
+
+    describe.only("isSelected Should ", () => {
+        it("be selected when isSelected true is passed in the restore config", async () => {
+            const workspaceToSave = await glue.workspaces.createWorkspace(basicConfig);
+            await workspaceToSave.saveLayout(layoutName);
+            const restoredWorkspace = await glue.workspaces.restoreWorkspace(layoutName, { isSelected: true });
+
+            expect(restoredWorkspace.isSelected).to.be.true;
+        });
+
+        it("be selected when isSelected undefined is passed in the restore config", async () => {
+            const workspaceToSave = await glue.workspaces.createWorkspace(basicConfig);
+            await workspaceToSave.saveLayout(layoutName);
+            const restoredWorkspace = await glue.workspaces.restoreWorkspace(layoutName, { isSelected: undefined });
+
+            expect(restoredWorkspace.isSelected).to.be.true;
+        });
+
+        it("be selected when nothing is passed", async () => {
+            await glue.workspaces.createWorkspace(basicConfig);
+            const workspaceToSave = await glue.workspaces.createWorkspace(basicConfig);
+            await workspaceToSave.saveLayout(layoutName);
+            const restoredWorkspace = await glue.workspaces.restoreWorkspace(layoutName, {});
+
+            expect(restoredWorkspace.isSelected).to.be.true;
+        });
+
+        it("be selected when a isSelected false workspace is in the layout and nothing is passed in the restore config", async () => {
+            await glue.workspaces.createWorkspace(basicConfig);
+            const workspaceToSave = await glue.workspaces.createWorkspace(Object.assign({}, basicConfig, { config: { isSelected: false } }));
+            await workspaceToSave.saveLayout(layoutName);
+            const restoredWorkspace = await glue.workspaces.restoreWorkspace(layoutName, {});
+
+            expect(restoredWorkspace.isSelected).to.be.true;
+        });
+
+        it("not be selected when isSelected false is passed in the restore config", async () => {
+            const workspaceToSave = await glue.workspaces.createWorkspace(basicConfig);
+            await workspaceToSave.saveLayout(layoutName);
+            const restoredWorkspace = await glue.workspaces.restoreWorkspace(layoutName, { isSelected: false });
+
+            expect(restoredWorkspace.isSelected).to.be.false;
         });
     });
 });

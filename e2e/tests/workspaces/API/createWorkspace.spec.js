@@ -192,6 +192,24 @@ d='M224 448v-96h64v96l-32 64zM336 224v-160c48 0 80-32 80-64v0 0h-320c0 32 32 64 
             expect(reuseFrameWorkspace.frameId).to.eql(secondWorkspace.frameId);
         });
 
+        it("create a workspace which isn't selected when isSelected false is passed", async () => {
+            const firstWorkspace = await glue.workspaces.createWorkspace(basicConfig);
+            const secondWorkspace = await glue.workspaces.createWorkspace(Object.assign({}, basicConfig, { config: { isSelected: false } }));
+            expect(secondWorkspace.isSelected).to.be.false;
+        });
+
+        it("create a workspace which is selected when isSelected true is passed", async () => {
+            const firstWorkspace = await glue.workspaces.createWorkspace(basicConfig);
+            const secondWorkspace = await glue.workspaces.createWorkspace(Object.assign({}, basicConfig, { config: { isSelected: true } }));
+            expect(secondWorkspace.isSelected).to.be.true;
+        });
+
+        it("create a workspace which is selected when isSelected true is undefined", async () => {
+            const firstWorkspace = await glue.workspaces.createWorkspace(basicConfig);
+            const secondWorkspace = await glue.workspaces.createWorkspace(Object.assign({}, basicConfig, { config: { isSelected: undefined } }));
+            expect(secondWorkspace.isSelected).to.be.true;
+        });
+
         it("reject when reuseFrameId is specified, but it is not valid", (done) => {
             glue.workspaces.createWorkspace(basicConfig).then(() => {
                 const reuseFrameConfig = Object.assign(JSON.parse(JSON.stringify(basicConfig)), {

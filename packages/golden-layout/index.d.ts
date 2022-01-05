@@ -463,6 +463,8 @@ declare module '@glue42/golden-layout' {
              * The icon related to the workspace - will be used for pinned icon.
              */
             icon?: string;
+
+            selected?: boolean;
         }
 
         interface BaseItemConfig {
@@ -657,6 +659,11 @@ declare module '@glue42/golden-layout' {
              * The icon associated with the layout
              */
             icon?:string;
+
+            /**
+             * Flag which indicates how to workspace should open selected or not
+             */
+            selected?: boolean;
         }
 
         export interface Config {

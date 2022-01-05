@@ -253,7 +253,8 @@ export const restoreWorkspaceConfigDecoder: Decoder<Glue42Workspaces.RestoreWork
     noTabHeader: optional(boolean()),
     inMemoryLayout: optional(boolean()),
     icon: optional(nonEmptyStringDecoder),
-    isPinned: optional(boolean())
+    isPinned: optional(boolean()),
+    isSelected: optional(boolean())
 }));
 
 export const openWorkspaceConfigDecoder: Decoder<OpenWorkspaceConfig> = object({
@@ -287,7 +288,8 @@ export const workspaceDefinitionDecoder: Decoder<Glue42Workspaces.WorkspaceDefin
         showEjectButtons: optional(boolean()),
         showAddWindowButtons: optional(boolean()),
         icon: optional(nonEmptyStringDecoder),
-        isPinned: optional(boolean())
+        isPinned: optional(boolean()),
+        isSelected: optional(boolean())
     })),
     frame: optional(object({
         reuseFrameId: optional(nonEmptyStringDecoder),

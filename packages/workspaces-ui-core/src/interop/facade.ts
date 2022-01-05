@@ -426,16 +426,21 @@ export class GlueFacade {
         if (!operationArguments.config) {
             operationArguments.config = {};
         }
-        operationArguments.config.context = operationArguments.config.context || operationArguments.context;
-        operationArguments.config.allowDrop = undefined; // The property isn't supported in core
+        const workspaceItem: WorkspaceItem = { ...operationArguments };
+        if (typeof operationArguments.config?.isSelected === "boolean") {
+            // The API friendly flag name is isSelected and to preserve backwards compatibility (the global layouts will use selected) the mapping is being made
+            workspaceItem.config.selected = operationArguments.config.isSelected;
+        }
+        workspaceItem.config.context = operationArguments.config.context || operationArguments.context;
+        workspaceItem.config.allowDrop = undefined; // The property isn't supported in core
 
-        this._constraintValidator.fixWorkspace(operationArguments);
+        this._constraintValidator.fixWorkspace(workspaceItem);
 
-        const config = this._converter.convertToRendererConfig(operationArguments);
+        const config = this._converter.convertToRendererConfig(workspaceItem);
         const workspaceId = await manager.createWorkspace(config as GoldenLayout.Config);
         const apiConfig = this._converter.convertToAPIConfig(manager.stateResolver.getWorkspaceConfig(workspaceId)) as WorkspaceItem;
 
-        this._locker.applyLockConfiguration(operationArguments, apiConfig);
+        this._locker.applyLockConfiguration(workspaceItem, apiConfig);
 
         return {
             id: apiConfig.id,

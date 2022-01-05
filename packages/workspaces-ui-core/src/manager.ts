@@ -128,6 +128,14 @@ export class WorkspacesManager {
             delete config.workspacesOptions.noTabHeader;
         }
 
+        if (typeof config.workspacesOptions.selected === "boolean") {
+            delete config.workspacesOptions.selected;
+        }
+
+        if (typeof (config.workspacesOptions as any).isSelected === "boolean") {
+            delete (config.workspacesOptions as any).isSelected;
+        }
+
         return result;
     }
 
@@ -144,7 +152,7 @@ export class WorkspacesManager {
         }
 
         (savedConfig.workspacesOptions as WorkspaceOptionsWithTitle).title = options?.title || name;
-        savedConfig.workspacesOptions.icon = options?.icon ?? savedConfig.workspacesOptions.icon ;
+        savedConfig.workspacesOptions.icon = options?.icon ?? savedConfig.workspacesOptions.icon;
 
         if (savedConfig && savedConfig.workspacesOptions && !savedConfig.workspacesOptions.name) {
             savedConfig.workspacesOptions.name = name;
@@ -168,6 +176,11 @@ export class WorkspacesManager {
         if (savedConfig && options?.isPinned !== undefined) {
             savedConfig.workspacesOptions = savedConfig.workspacesOptions || {};
             savedConfig.workspacesOptions.isPinned = options?.isPinned;
+        }
+
+        if (savedConfig && options?.isSelected !== undefined) {
+            savedConfig.workspacesOptions = savedConfig.workspacesOptions || {};
+            savedConfig.workspacesOptions.selected = options?.isSelected;
         }
 
         if (!this._isLayoutInitialized) {
