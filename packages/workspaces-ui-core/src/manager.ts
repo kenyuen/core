@@ -128,14 +128,6 @@ export class WorkspacesManager {
             delete config.workspacesOptions.noTabHeader;
         }
 
-        if (typeof config.workspacesOptions.selected === "boolean") {
-            delete config.workspacesOptions.selected;
-        }
-
-        if (typeof (config.workspacesOptions as any).isSelected === "boolean") {
-            delete (config.workspacesOptions as any).isSelected;
-        }
-
         return result;
     }
 
