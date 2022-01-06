@@ -1,3 +1,5 @@
+1.8.1
+feat: added isSelected to control how the workspace is being opened
 1.8.0
 feat: pinned tabs support and workspace icons
 1.7.1

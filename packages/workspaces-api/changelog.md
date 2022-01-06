@@ -1,3 +1,5 @@
+1.11.1
+feat: added isSelected support
 1.11.0
 feat: pinned tabs support and workspace icons
 1.10.1

@@ -1,3 +1,5 @@
+2.3.1
+feat: Added additional typings for isSelected
 2.3.0
 feat: Pinned tabs
 2.2.1
