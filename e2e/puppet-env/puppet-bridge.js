@@ -3,6 +3,7 @@ const http = require("http");
 const WebSocket = require("ws");
 const cors = require("cors");
 const bodyParser = require("body-parser");
+const { handleHttpCommand } = require("./controller");
 
 const sockets = [];
 
@@ -23,10 +24,11 @@ app.get("/", (_, res) => {
 });
 
 app.post("/command", (req, res) => {
-    // handle commands
     const body = req.body;
-    res.json({ message: "OK" });
-    // res.send(new Error("oops"));
+
+    handleHttpCommand(body.command, body.data)
+        .then((result) => res.json(result))
+        .catch((error) => res.status(400).send({errMsg: typeof error === "string" ? error : JSON.stringify(error.message)}));
 });
 
 wss.on("connection", (ws) => {

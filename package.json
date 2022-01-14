@@ -21,6 +21,7 @@
     "announce": "lerna-changelog"
   },
   "devDependencies": {
+    "@glue42/gateway-ws": "^3.0.13-beta.3",
     "@lerna/changed": "^3.20.0",
     "@lerna/run": "^3.20.0",
     "@types/sinon": "^10.0.1",

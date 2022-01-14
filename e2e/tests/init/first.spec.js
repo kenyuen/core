@@ -1,4 +1,4 @@
-describe("first ", function() {
+describe("first ", function () {
 
     before(async () => await coreReady);
 
@@ -11,8 +11,21 @@ describe("first ", function() {
     });
 
     it("try it", (done) => {
-        gtf.puppet.tryServer();
-
-        setTimeout(() => done(), 3000);
-    })
+        gtf.puppet.startDesktopGateway()
+            .then((gw) => gtf.puppet.stopDesktopGateway(gw))
+            .then(() => done())
+            .catch(done);
+    });
 });
+
+// start a GW -> stop the gateway
+// start a Platform
+    // close the platform
+// start a Client (Core or Web)
+    // close the client
+
+// define a web app to be started in every occasion when called from gtf.puppet
+// app:
+// on load -> creates an id for itself and a message channel -> sends to it's parent 
+// the port reaches the runner
+// the runner then sends commands -> init GlueWeb, init GlueWebPlatform, init GlueCore with config (as flags -> enable wsp or a plugin)
