@@ -131,9 +131,6 @@ export namespace Glue42Workspaces {
 
         /** Opens the workspace without a workspace tab element */
         noTabHeader?: boolean;
-
-        /** Opens the workspace in pinned or in normal state */
-        isPinned?: boolean;
     }
 
     /** An object containing the bounds of a frame */
@@ -213,9 +210,6 @@ export namespace Glue42Workspaces {
 
         /** Position of the workspace in relation to it's siblings in the frame. */
         position?: number;
-
-        /** States whether or not the workspace should have focus when opened. */
-        isFocused?: boolean;
 
         /** Provides the opportunity to open a workspace with no tab header */
         noTabHeader?: boolean;
