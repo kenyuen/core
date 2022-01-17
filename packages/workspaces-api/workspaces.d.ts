@@ -35,21 +35,23 @@ export namespace Glue42Workspaces {
         metadata?: any;
     }
 
+    export interface WorkspaceLayoutComponentState {
+        /** An array of all the workspace's children. */
+        children: Array<RowLayoutItem | ColumnLayoutItem | GroupLayoutItem | WindowLayoutItem>;
+
+        /** An object containing various element settings. */
+        config: any;
+
+        /** An object containing the context of the workspace layout */
+        context: any;
+    }
+
     /** An object describing a workspace definition in a workspace layout. */
     export interface WorkspaceComponent {
         /** The type of the workspace element. */
         type: "Workspace";
 
-        state: {
-            /** An array of all the workspace's children. */
-            children: Array<RowLayoutItem | ColumnLayoutItem | GroupLayoutItem | WindowLayoutItem>;
-
-            /** An object containing various element settings. */
-            config: any;
-
-            /** An object containing the context of the workspace layout */
-            context: any;
-        };
+        state: WorkspaceLayoutComponentState;
     }
 
     /** An object describing a row definition in a workspace layout. */
@@ -88,19 +90,21 @@ export namespace Glue42Workspaces {
         config: any;
     }
 
+    export interface WindowLayoutItemConfig {
+        /** The name of the application as defined in Glue Desktop */
+        appName: string;
+        /** The url of the window, in case it is not a defined as an application. */
+        url?: string;
+        /** The title of the window */
+        title?: string;
+    }
+
     /** An object describing a window definition in a workspace layout. */
     export interface WindowLayoutItem {
         /** The type of the workspace element. */
         type: "window";
         /** A configuration object for the window layout */
-        config: {
-            /** The name of the application as defined in Glue Desktop */
-            appName: string;
-            /** The url of the window, in case it is not a defined as an application. */
-            url?: string;
-            /** The title of the window */
-            title?: string;
-        };
+        config: WindowLayoutItemConfig;
     }
 
     /** A function which when called unsubscribes the user from further notifications. */
@@ -206,9 +210,6 @@ export namespace Glue42Workspaces {
 
         /** Position of the workspace in relation to it's siblings in the frame. */
         position?: number;
-
-        /** States whether or not the workspace should have focus when opened. */
-        isFocused?: boolean;
 
         /** Provides the opportunity to open a workspace with no tab header */
         noTabHeader?: boolean;
@@ -457,6 +458,14 @@ export namespace Glue42Workspaces {
         isPinned?: boolean;
     }
 
+    export interface FrameTargetingOptions {
+        /** A string id of an existing frame. If provided, this workspace will be opened in that specific frame */
+        reuseFrameId?: string;
+
+        /** A setting used to declare that the workspace must be in a new frame and also provide options for that new frame */
+        newFrame?: NewFrameConfig | boolean;
+    }
+
     /** An object describing the possible options when defining a new workspace */
     export interface WorkspaceDefinition {
         /** An array of all the workspace's children which will also be opened. */
@@ -469,13 +478,7 @@ export namespace Glue42Workspaces {
         config?: WorkspaceConfig;
 
         /** Options regarding the frame where this workspace will be opened in. */
-        frame?: {
-            /** A string id of an existing frame. If provided, this workspace will be opened in that specific frame */
-            reuseFrameId?: string;
-
-            /** A setting used to declare that the workspace must be in a new frame and also provide options for that new frame */
-            newFrame?: NewFrameConfig | boolean;
-        };
+        frame?: FrameTargetingOptions;
     }
 
     /** An object describing the possible options when opening a box inside a workspace. */
