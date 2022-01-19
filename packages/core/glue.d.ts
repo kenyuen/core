@@ -12,8 +12,9 @@ export namespace Glue42Core {
 
     export type LogLevel = "off" | "trace" | "debug" | "info" | "warn" | "error";
 
-    /** Optional configuration object when initializing the Glue42 library. */
+    /** Optional configuration object for initializing the Glue42 library. */
     export interface Config {
+
         /**
          * Application name. If not specified, the value depends on the hosting environment.
          * For the browser - `document.title + random number` (e.g., ClientList321333).
@@ -21,10 +22,10 @@ export namespace Glue42Core {
          */
         application?: string;
 
-        /** Configurations for the Glue42 Gateway connection. */
+        /** Configuration for the Glue42 Gateway connection. */
         gateway?: GatewayConfig;
 
-        /** Metrics configurations. */
+        /** Metrics configuration. */
         metrics?: boolean | MetricsConfig;
 
         /** Enable or disable the Contexts API. */
@@ -36,7 +37,7 @@ export namespace Glue42Core {
         /** Defines logging levels per output target. */
         logger?: LogLevel | LoggerConfig;
 
-        /** Pass this to override the build-in logger and handle logging on your own */
+        /** Overrides the built-in logger and allows custom logging handling. */
         customLogger?: Glue42Core.CustomLogger;
 
         /**
@@ -49,17 +50,21 @@ export namespace Glue42Core {
         auth?: Glue42Core.Auth | string;
 
         /**
-         * Specify custom identity fields. Those can also override some of the system fields assigned
+         * Specifies custom identity fields which can also override some of the system-assigned fields.
          */
         identity?: { [key: string]: string | number | boolean };
     }
 
-    /** Configurations for the Glue42 Gateway connection. */
+    /** Configuration for the Glue42 Gateway connection. */
     export interface GatewayConfig {
+
         /** URL for the WebSocket connections to the Gateway. */
         ws?: string;
 
-        /** Legacy (Version of the Gateway that you are connected to)  */
+        /**
+         * @ignore
+         * Legacy property. Version of the Gateway.
+         */
         protocolVersion?: number;
 
         /**
@@ -69,26 +74,33 @@ export namespace Glue42Core {
         reconnectInterval?: number;
 
         /**
-         * Number of reconnect attempts.
+         * Number of reconnection attempts.
          * @default 10
          */
         reconnectAttempts?: number;
 
-        /** A way to pass custom token provider for Gateway v.3 tokens. */
+        /**
+         * @ignore
+         * Allows passing a custom token provider for Gateway v3 tokens.
+         */
         gwTokenProvider?: GwTokenProvider;
 
         /**
          * @deprecated
-         * Path to the shared worker file that contains glue0 shared worker related code
+         * @ignore
+         * Path to the shared worker file that contains Glue42 shared worker related code.
          */
         sharedWorker?: string;
 
         /**
-         * An object containing the configuration settings when core is operating in a web platform environment
+         * Configuration settings for the Gateway when it is operating in a Web Platform environment.
          */
         webPlatform?: WebPlatformConnection;
 
-        /** Connect with GW in memory */
+        /**
+         * @ignore
+         * Settings for connecting with the Gateway in memory.
+         */
         inproc?: InprocGWSettings;
 
         /**
@@ -99,41 +111,64 @@ export namespace Glue42Core {
         replaySpecs?: Glue42Core.Connection.MessageReplaySpec[];
     }
 
+    /**
+     * Configuration settings for the Gateway when it is operating in a Web Platform environment.
+     */
     export interface WebPlatformConnection {
         port: MessagePort;
         windowId?: string;
     }
 
+    /** @ignore */
     export interface InprocGWSettings {
         facade: Glue42Core.Connection.GW3Facade;
     }
 
     /**
-     * A way to pass custom token provider for Gateway v.3 tokens.
+     * Allows passing a custom token provider for Gateway v3 tokens.
      * @ignore
      */
     export interface GwTokenProvider {
         get: () => string;
     }
 
-    /** Metrics configurations. */
+    /** Metrics configuration. */
     export interface MetricsConfig {
 
         /**
-         *  If `false` (default), an App system will be created on top level, and all other metrics will live in it.
-         *  If `true`, an App system will be created, and all metrics will live on top level.
+         *  If `false` (default), an "App" system will be created on top level and all other metrics systems will be created under it.
+         *  If `true`, the "App" system and all other metrics systems will be created on top level.
          */
         disableAutoAppSystem?: boolean;
 
+        /**
+         * Configuration for page performance metrics.
+         */
         pagePerformanceMetrics?: PagePerformanceMetricsConfig;
     }
 
+    /**
+     * Configuration for page performance metrics.
+     */
     export interface PagePerformanceMetricsConfig {
+
+        /**
+         * Whether to enable or disable page performance metrics.
+         */
         enabled: boolean;
+
+        /**
+         * Initial interval in milliseconds to wait before starting to publish metrics.
+         */
         initialPublishTimeout: number;
+
+        /**
+         * Interval in milliseconds at which to publish the metrics.
+         */
         publishInterval: number;
     }
 
+    /** @ignore */
     export interface Extension {
         /* Array of libs to be injected to glue - use only in libraries that wrap glue-core*/
         libs?: ExternalLib[];
@@ -148,6 +183,7 @@ export namespace Glue42Core {
         extOptions?: any;
     }
 
+    /** @ignore */
     export interface ExternalLib {
         name: string;
         create: (core: GlueCore) => any;
@@ -155,53 +191,76 @@ export namespace Glue42Core {
 
     /**
      * Authentication can use one of the following flows:
-     * * username/password;
-     * * `token` - access tokens can be generated after successful login from the Auth Provider (e.g., Auth0);
-     * * `gatewayToken` - Gateway tokens are time limited tokens generated by the Gateway after an explicit request. To generate one, use the `glue.connection.authToken()` method;
-     * * `sspi` - using `sessionId` and authentication challenge callback;
+     *
+     * - username/password;
+     * - `token` - access tokens can be generated after successful login from the Auth Provider (e.g., Auth0);
+     * - `gatewayToken` - Gateway tokens are time limited tokens generated by the Gateway after an explicit request. To generate one, use the `glue.connection.authToken()` method;
+     * - `sspi` - using `sessionId` and authentication challenge callback;
      */
     export interface Auth {
-        /** Username to be used */
+        /** Username to be used for authenticating. */
         username?: string;
 
-        /** Password to be used */
+        /** Password to be used for authenticating. */
         password?: string;
 
+        /** Authentication flow. */
         flowName?: "sspi";
 
+        /**
+         * Callback that will be invoked during the authentication flow.
+         */
         flowCallback?: (sessionId: string, token: any) => Promise<{ data: any }>;
 
+        /** Session ID. */
         sessionId?: string;
 
         /**
-         * Authenticate using token generated from the auth provider.
+         * Authenticate using a token generated by the auth provider.
          */
         token?: string;
 
         /**
-         * Authenticate using gatewayToken
+         * Authenticate using a Gateway token.
          */
         gatewayToken?: string;
     }
 
     /**
-     * Describes a custom logger object
+     * Object describing a custom logger.
      */
     export interface CustomLogger {
+
+        /** Method for "debug" level logging. */
         debug(message?: any, ...optionalParams: any[]): void;
+
+        /** Method for "error" level logging. */
         error(message?: any, ...optionalParams: any[]): void;
+
+        /** Method for "info" level logging. */
         info(message?: any, ...optionalParams: any[]): void;
+
+        /** Method for "log" level logging. */
         log(message?: any, ...optionalParams: any[]): void;
+
+        /** Method for "warn" level logging. */
         warn(message?: any, ...optionalParams: any[]): void;
     }
 
     export interface GlueCore {
-        /** Connection library. */
+        /**
+         * @ignore
+         * Connection library.
+         */
         connection: Glue42Core.Connection.API;
 
+        /** Logger library. */
         logger: Glue42Core.Logger.API;
 
-        /** Interop library. */
+        /**
+         * @ignore
+         * Interop library.
+         */
         agm: Glue42Core.Interop.API;
 
         /** Interop library. */
@@ -213,10 +272,12 @@ export namespace Glue42Core {
         /** Metrics library. */
         metrics: Glue42Core.Metrics.API;
 
-        /** Contexts library. */
+        /** Shared Contexts library. */
         contexts: Glue42Core.Contexts.API;
 
-        /** Brings up the Glue42 Desktop feedback dialog. */
+        /**
+         * Displays the Glue42 Enterprise Feedback Form and allows customizing it.
+         */
         feedback(info?: FeedbackInfo): void;
 
         /** Info object containing versions of all included libraries and Glue42 itself. */
@@ -244,16 +305,18 @@ export namespace Glue42Core {
         config?: any;
 
         /**
-         * Disposes Glue42 API. This will remove all Interop methods and streams registered by the application.
+         * Disposes of the Glue42 API. Removes all Interop methods and streams registered by the application.
          */
         done(): Promise<void>;
     }
 
     /**
-     * Allows customizing the feedback form
+     * Object for customizing the Feedback Form.
      */
     export interface FeedbackInfo {
-        /** Will be added to the description field in the feedback form */
+        /**
+         * Text that will be added to the Description field in the Feedback Form.
+         */
         message?: string;
     }
 
