@@ -1,3 +1,8 @@
+2.2.3
+chore: Updated the typings file
+2.2.2
+feat: Added additional typings for isSelected
+feat: Pinned tabs
 2.2.1
 fix: Internal constraints logic improvement
 2.2.0

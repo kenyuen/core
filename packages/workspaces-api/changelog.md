@@ -1,3 +1,8 @@
+1.10.3
+feat: added createFrame, frame.init, frame.isInitialized and frame.onInitializationRequested
+1.10.2
+feat: added isSelected support
+feat: pinned tabs support and workspace icons
 1.10.1
 feat: saveLayout() now can also save meta data
 1.10.0

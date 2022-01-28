@@ -44,6 +44,7 @@ export interface WorkspaceConfigResult {
     widthInPx?: number;
     heightInPx?: number;
     isSelected?: boolean;
+    isPinned?: boolean;
 }
 
 export interface BaseChildSnapshotConfig {
@@ -129,6 +130,8 @@ export interface FrameSnapshotResult {
 
 export interface FrameSummaryResult {
     id: string;
+    isInitialized?: boolean;
+    initializationContext?: Glue42Workspaces.FrameInitializationContext;
 }
 
 export interface FrameSummariesResult {
@@ -194,12 +197,20 @@ export interface FrameBoundsResult {
     };
 }
 
+export interface GetWorkspaceIconResult {
+    icon: string;
+}
+
 // #endregion
 
 // #region outgoing
 
 export interface WorkspaceCreateConfigProtocol extends Glue42Workspaces.WorkspaceDefinition {
     saveConfig?: Glue42Workspaces.WorkspaceCreateConfig;
+}
+
+export interface FrameInitializationConfigProtocol extends Glue42Workspaces.FrameInitializationConfig {
+    frameId: string;
 }
 
 export interface GetFrameSummaryConfig {
@@ -265,16 +276,16 @@ export interface BundleConfig {
     workspaceId: string;
 }
 
-export interface WorkspaceSelector {
-    workspaceId: string;
-}
-
 export interface WindowSelector {
     windowPlacementId: string;
 }
 
 export interface ItemSelector {
     itemId: string;
+}
+
+export interface WorkspaceSelector {
+    workspaceId: string;
 }
 
 // #endregion
@@ -363,4 +374,15 @@ export interface LockWorkspaceConfig {
         showSaveButton?: boolean;
     };
 }
+
+export interface PinWorkspaceConfig {
+    workspaceId: string;
+    icon?: string;
+}
+
+export interface SetWorkspaceIconConfig {
+    workspaceId: string;
+    icon?: string;
+}
+
 // #endregion
