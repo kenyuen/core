@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-empty-function */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Glue42Core } from "../../../../glue";
 import { ContextBridge } from "../../contextBridge";
 import { GW3ContextData as ContextData } from "./contextData";
@@ -173,6 +175,8 @@ import { ContextName, ContextSubscriptionKey, ContextDelta, ContextDeltaCommand 
 export class GW3Bridge implements ContextBridge {
     private _logger: Logger;
     private _connection: Connection;
+    private _trackAllContexts: boolean | undefined;
+    private _reAnnounceKnownContexts: boolean | undefined;
     // used for sending messages as it provides a promise-based interface
     private _gw3Session: Glue42Core.Connection.GW3DomainSession;
 
@@ -189,6 +193,11 @@ export class GW3Bridge implements ContextBridge {
     private _contextNameToId: { [contextName: string]: string } = {};
     private _contextIdToName: { [contextId: string]: string } = {};
     private _protocolVersion?: number = undefined;
+
+    private _contextsTempCache: { [contextName: string]: any } = {};
+    private _contextsSubscriptionsCache: Array<{ contextName: string; subKey: ContextSubscriptionKey; callback: (data: any, delta: any, removed: string[], key: ContextSubscriptionKey, extraData?: any) => void }> = [];
+    private _systemContextsSubKey: number | undefined;
+
     private get protocolVersion(): number {
         if (!this._protocolVersion) {
             const contextsDomainInfo = this._connection.availableDomains.find((d) => d.uri === "context");
@@ -204,6 +213,8 @@ export class GW3Bridge implements ContextBridge {
     public constructor(config: ContextsConfig) {
         this._connection = config.connection;
         this._logger = config.logger;
+        this._trackAllContexts = config.trackAllContexts;
+        this._reAnnounceKnownContexts = config.reAnnounceKnownContexts;
         this._gw3Session = this._connection.domain(
             "global",
             [
@@ -212,6 +223,16 @@ export class GW3Bridge implements ContextBridge {
                 msg.GW_MESSAGE_CONTEXT_DESTROYED,
                 msg.GW_MESSAGE_CONTEXT_UPDATED,
             ]);
+
+        this._gw3Session.disconnected(this.resetState.bind(this));
+
+        this._gw3Session.onJoined((wasReconnect) => {
+            if (!wasReconnect || !this._reAnnounceKnownContexts) {
+                return;
+            }
+
+            this.reInitiateState();
+        });
 
         // TODO: logging, validation and error handling
 
@@ -441,7 +462,8 @@ export class GW3Bridge implements ContextBridge {
             delta: any,
             removed: string[],
             key: ContextSubscriptionKey,
-            extraData?: any) => void)
+            extraData?: any) => void,
+        subscriptionKey?: ContextSubscriptionKey)
         : Promise<ContextSubscriptionKey> {
 
         // - populate contextData's updateCallbacks with new entry
@@ -450,8 +472,16 @@ export class GW3Bridge implements ContextBridge {
         //
         // - if the context is announced, ensure handler gets snapshot
 
-        const thisCallbackSubscriptionNumber = this._nextCallbackSubscriptionNumber;
-        this._nextCallbackSubscriptionNumber += 1;
+        const thisCallbackSubscriptionNumber = typeof subscriptionKey === "undefined" ? this._nextCallbackSubscriptionNumber : subscriptionKey;
+
+        if (typeof subscriptionKey === "undefined") {
+            this._nextCallbackSubscriptionNumber += 1;
+        }
+
+        if (this._contextsSubscriptionsCache.every((subscription) => subscription.subKey !== this._nextCallbackSubscriptionNumber)) {
+            // this cache is used to re-initiate all known subscriptions when the connection is re-established
+            this._contextsSubscriptionsCache.push({ contextName: name, subKey: thisCallbackSubscriptionNumber, callback });
+        }
 
         let contextData = this._contextNameToData[name];
 
@@ -524,8 +554,10 @@ export class GW3Bridge implements ContextBridge {
     }
 
     public unsubscribe(subscriptionKey: ContextSubscriptionKey): void {
+
+        this._contextsSubscriptionsCache = this._contextsSubscriptionsCache.filter((subscription) => subscription.subKey !== subscriptionKey);
+
         for (const name of Object.keys(this._contextNameToData)) {
-            const contextId = this._contextNameToId[name];
             const contextData = this._contextNameToData[name];
 
             if (!contextData) {
@@ -696,6 +728,14 @@ export class GW3Bridge implements ContextBridge {
 
             this._contextNameToData[name] = contextData =
                 new ContextData(contextCreatedMsg.context_id, name, true, contextCreatedMsg.activity_id);
+
+            if (this._trackAllContexts) {
+                // here we are tracking all announced contexts, which allows us to re-announce as many contexts
+                // as possible when a gateway reconnection happens
+
+                // tslint:disable-next-line:no-empty
+                this.subscribe(name, () => { }).then((subKey) => this._systemContextsSubKey = subKey);
+            }
         }
     }
 
@@ -947,5 +987,75 @@ export class GW3Bridge implements ContextBridge {
         }
 
         return delta;
+    }
+
+    private resetState(): void {
+        for (const sub of this._gw3Subscriptions) {
+            this._connection.off(sub);
+        }
+
+        if (this._systemContextsSubKey) {
+            this.unsubscribe(this._systemContextsSubKey);
+            delete this._systemContextsSubKey;
+        }
+
+        this._gw3Subscriptions = [];
+        this._contextNameToId = {};
+        this._contextIdToName = {};
+        delete this._protocolVersion;
+
+        this._contextsTempCache = Object.keys(this._contextNameToData).reduce<{ [contextName: string]: any }>((cacheSoFar, ctxName) => {
+            cacheSoFar[ctxName] = this._contextNameToData[ctxName].context;
+            return cacheSoFar;
+        }, {});
+
+        this._contextNameToData = {};
+    }
+
+    private reInitiateState(): void {
+        this.subscribeToContextCreatedMessages();
+
+        this.subscribeToContextUpdatedMessages();
+
+        this.subscribeToContextDestroyedMessages();
+
+        this._connection.replayer?.drain(
+            ContextMessageReplaySpec.name,
+            (message) => {
+                const type = (message as any).type;
+                if (!type) {
+                    return;
+                }
+
+                if (type === msg.GW_MESSAGE_CONTEXT_CREATED ||
+                    type === msg.GW_MESSAGE_CONTEXT_ADDED ||
+                    type === msg.GW_MESSAGE_ACTIVITY_CREATED) {
+                    this.handleContextCreatedMessage(message as ContextMessage);
+                } else if (type === msg.GW_MESSAGE_SUBSCRIBED_CONTEXT ||
+                    type === msg.GW_MESSAGE_CONTEXT_UPDATED ||
+                    type === msg.GW_MESSAGE_JOINED_ACTIVITY) {
+                    this.handleContextUpdatedMessage(message as ContextMessage);
+                } else if (type === msg.GW_MESSAGE_CONTEXT_DESTROYED ||
+                    type === msg.GW_MESSAGE_ACTIVITY_DESTROYED) {
+                    this.handleContextDestroyedMessage(message as ContextMessage);
+                }
+            });
+
+        Promise.all(this._contextsSubscriptionsCache.map((subscription) => this.subscribe(subscription.contextName, subscription.callback, subscription.subKey)))
+            .then(() => {
+                Object.keys(this._contextsTempCache).forEach((ctxName) => {
+                    const lastKnownData = this._contextsTempCache[ctxName];
+
+                    const existingName = this.all().some((name) => name === ctxName);
+
+                    if (existingName) {
+                        return this.update(ctxName, lastKnownData);
+                    }
+
+                    this.set(ctxName, lastKnownData);
+                });
+
+                this._contextsTempCache = {};
+            });
     }
 }

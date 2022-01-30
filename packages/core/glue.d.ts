@@ -27,8 +27,8 @@ export namespace Glue42Core {
         /** Metrics configurations. */
         metrics?: boolean | MetricsConfig;
 
-        /** Enable or disable the Contexts API. */
-        contexts?: boolean;
+        /** Enable, disable and configure the Contexts API. */
+        contexts?: boolean | ContextsConfig;
 
         /** Enable or disable the Pub/Sub API. */
         bus?: boolean;
@@ -126,6 +126,15 @@ export namespace Glue42Core {
         disableAutoAppSystem?: boolean;
 
         pagePerformanceMetrics?: PagePerformanceMetricsConfig;
+    }
+
+    /** Contexts configurations. */
+    export interface ContextsConfig {
+        /** Subscribes to all known contexts, which allows glue to re-announce as many contexts as possible when a gateway reconnection happens */
+        trackAllContexts?: boolean;
+
+        /** Enables or disables re-announcing known contexts when a gateway reconnection happens */
+        reAnnounceKnownContexts?: boolean;
     }
 
     export interface PagePerformanceMetricsConfig {

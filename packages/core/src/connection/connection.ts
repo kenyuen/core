@@ -73,11 +73,6 @@ export default class Connection implements Glue42Core.Connection.API {
             this.handleConnectionChanged.bind(this)
         );
         this.transport.onMessage(this.handleTransportMessage.bind(this));
-
-        if (settings.replaySpecs && settings.replaySpecs.length) {
-            this.replayer = new MessageReplayerImpl(settings.replaySpecs);
-            this.replayer.init(this);
-        }
     }
 
     public send(message: object, options?: Glue42Core.Connection.SendMessageOptions): Promise<void> {
@@ -207,6 +202,12 @@ export default class Connection implements Glue42Core.Connection.API {
         this._connected = connected;
 
         if (connected) {
+
+            if (this.settings.replaySpecs && this.settings.replaySpecs.length) {
+                this.replayer = new MessageReplayerImpl(this.settings.replaySpecs);
+                this.replayer.init(this);
+            }
+
             this.registry.execute("connected");
         } else {
             this.registry.execute("disconnected");
