@@ -6,7 +6,7 @@
 
 import { Glue42WebPlatform } from "../../platform";
 import "@glue42/gateway-web/web/gateway-web.js";
-import { GatewayWebAPI, configure_logging, create } from "@glue42/gateway-web/web/gateway-web.js";
+import { GatewayWebAPI, configure_logging, create, GwClient } from "@glue42/gateway-web/web/gateway-web.js";
 import { Glue42CoreMessageTypes } from "../common/constants";
 
 export class Gateway {
@@ -32,7 +32,7 @@ export class Gateway {
         await this._gatewayWebInstance.start();
     }
 
-    public async connectClient(clientPort: MessagePort, removeFromPlatform?: (clientId: string) => void): Promise<void> {
+    public async connectClient(clientPort: MessagePort, removeFromPlatform?: (clientId: string, announce?: boolean, preservePort?: boolean) => void): Promise<void> {
 
         const client = await this._gatewayWebInstance.connect((_: object, message: string) => clientPort.postMessage(message));
 
@@ -43,12 +43,13 @@ export class Gateway {
                 return;
             }
 
-            if (data && data.type === Glue42CoreMessageTypes.clientUnload.name) {
+            if (data && (data.type === Glue42CoreMessageTypes.clientUnload.name || data.type === Glue42CoreMessageTypes.gatewayDisconnect.name)) {
 
                 (clientPort as any).closed = true;
 
                 if (removeFromPlatform) {
-                    removeFromPlatform(data.data.clientId);
+
+                    removeFromPlatform(data.data.clientId, false, data.type === Glue42CoreMessageTypes.gatewayDisconnect.name);
                 }
                 client.disconnect();
                 return;
@@ -88,5 +89,55 @@ export class Gateway {
             }
 
         });
+    }
+
+    public async setupInternalClient(clientPort: MessagePort): Promise<void> {
+
+        let client: GwClient;
+
+        clientPort.onmessage = (event): void => {
+            const data = event.data?.glue42core;
+
+            if (data && data.type === Glue42CoreMessageTypes.gatewayInternalConnect.name) {
+
+                (clientPort as any).closed = false;
+
+                this._gatewayWebInstance.connect((_: object, message: string) => clientPort.postMessage(message))
+                    .then((c) => {
+                        client = c;
+
+                        clientPort.postMessage({
+                            glue42core: {
+                                type: Glue42CoreMessageTypes.gatewayInternalConnect.name,
+                                success: true
+                            }
+                        });
+                    })
+                    .catch((err) => {
+                        const stringError = typeof err === "string" ? err : JSON.stringify(err.message);
+                        clientPort.postMessage({
+                            glue42core: {
+                                type: Glue42CoreMessageTypes.gatewayInternalConnect.name,
+                                error: stringError
+                            }
+                        });
+                    });
+                return;
+            }
+
+            if (!client || (clientPort as any).closed) {
+                return;
+            }
+
+            if (data && data.type === Glue42CoreMessageTypes.gatewayDisconnect.name) {
+
+                (clientPort as any).closed = true;
+
+                client.disconnect();
+                return;
+            }
+
+            client.send(event.data);
+        };
     }
 }

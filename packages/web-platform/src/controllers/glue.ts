@@ -11,6 +11,7 @@ import { PromisePlus } from "../shared/promisePlus";
 import { waitFor } from "../shared/utils";
 import { UnsubscribeFunction } from "callback-registry";
 import { FrameSessionData } from "../libs/workspaces/types";
+import { Glue42WebPlatform } from "../../platform";
 
 export class GlueController {
     private _systemGlue!: Glue42Core.GlueCore;
@@ -18,6 +19,8 @@ export class GlueController {
     private _systemStream: Glue42Core.Interop.Stream | undefined;
     private _workspacesStream: Glue42Core.Interop.Stream | undefined;
     private _platformClientWindowId!: string;
+
+    private secondaryTransportConfig: Glue42WebPlatform.Connection.SecondaryConnectionSettings | undefined;
 
     constructor(
         private readonly portsBridge: PortsBridge,
@@ -35,6 +38,45 @@ export class GlueController {
     public async start(config: InternalPlatformConfig): Promise<void> {
         this._systemGlue = await this.initSystemGlue(config.glue);
         logger.setLogger(this._systemGlue.logger);
+    }
+
+    public async startSecondaryConnectionTrack(config: Glue42WebPlatform.Connection.SecondaryConnectionSettings): Promise<void> {
+
+        this.secondaryTransportConfig = config;
+
+        await this.checkSecondaryTransportLive(this.secondaryTransportConfig.url);
+
+        const switchResult = await this._systemGlue.connection.switchTransport({
+            type: "secondary",
+            transportConfig: this.secondaryTransportConfig
+        });
+
+        if (!switchResult.success) {
+            await this.wait();
+
+            this.startSecondaryConnectionTrack(config);
+
+            return;
+        }
+
+        this.switchClientsTransport({
+            type: "secondary",
+            transportConfig: this.secondaryTransportConfig
+        });
+
+        const unsub = this._systemGlue.connection.disconnected(async () => {
+
+            unsub();
+
+            await this._systemGlue.connection.switchTransport({ type: "default" });
+
+            this.switchClientsTransport({ type: "default" });
+
+            await this.wait();
+
+            this.startSecondaryConnectionTrack(config);
+        });
+
     }
 
     public async initClientGlue(config?: Glue42Web.Config, factory?: Glue42WebFactoryFunction, isWorkspaceFrame?: boolean): Promise<Glue42Web.API> {
@@ -256,5 +298,52 @@ export class GlueController {
         }
 
         return invocationResult.all_return_values[0].returned;
+    }
+
+
+    private async switchClientsTransport(config: Glue42Core.Connection.TransportSwitchSettings): Promise<void> {
+
+        await this._clientGlue.connection.switchTransport(config);
+
+        this.portsBridge.signalTransportSwitch(config);
+    }
+
+    private async checkSecondaryTransportLive(url?: string): Promise<void> {
+
+        if (!url) {
+            throw new Error("Cannot track the secondary transport, because no url was provided");
+        }
+
+        try {
+            await this.checkPreferredTransportState(url);
+
+            return;
+        } catch (error) {
+
+            await this.wait();
+
+            return this.checkSecondaryTransportLive(url);
+        }
+
+    }
+
+    private checkPreferredTransportState(url: string): Promise<void> {
+
+        return new Promise((resolve, reject) => {
+            const ws = new WebSocket(url);
+
+            ws.onerror = (): void => reject();
+
+            ws.onopen = (): void => {
+                ws.close();
+                resolve();
+            };
+
+        });
+
+    }
+
+    private wait(): Promise<void> {
+        return new Promise<void>((resolve) => setTimeout(() => resolve(), 5000));
     }
 }

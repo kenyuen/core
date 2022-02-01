@@ -11,12 +11,15 @@ import {
 import { CoreClientData, SessionWindowData } from "../common/types";
 import { SessionStorageController } from "../controllers/session";
 import { Glue42WebPlatform } from "../../platform";
+import { Glue42Core } from "@glue42/core";
 
 export class PortsBridge {
 
     private readonly registry: CallbackRegistry = CallbackRegistryFactory();
     private clients: { [key: string]: Window | chrome.runtime.Port } = {};
+    private allPorts: { [key: string]: MessagePort | chrome.runtime.Port } = {};
     private unLoadStarted = false;
+    private secondaryTransportConfig: Glue42Core.Connection.TransportSwitchSettings | undefined;
 
     constructor(
         private readonly gateway: Gateway,
@@ -34,7 +37,7 @@ export class PortsBridge {
 
         const channel = this.ioc.createMessageChannel();
 
-        await this.gateway.connectClient(channel.port1);
+        await this.gateway.setupInternalClient(channel.port1);
 
         return channel.port2;
     }
@@ -78,7 +81,21 @@ export class PortsBridge {
 
         this.clients[client.clientId] = port;
 
+        this.allPorts[client.clientId] = port;
+
         port.postMessage(message);
+    }
+
+    public signalTransportSwitch(secondaryTransportConfig: Glue42Core.Connection.TransportSwitchSettings): void {
+        if (secondaryTransportConfig.type === "secondary") {
+            this.secondaryTransportConfig = secondaryTransportConfig;
+        } else {
+            delete this.secondaryTransportConfig;
+        }
+
+        for (const id in this.allPorts) {
+            this.allPorts[id].postMessage({ type: "transportSwitchRequest", switchSettings: secondaryTransportConfig });
+        }
     }
 
     private setUpBeforeUnload(): void {
@@ -145,6 +162,7 @@ export class PortsBridge {
             glue42core: {
                 type: Glue42CoreMessageTypes.connectionAccepted.name,
                 port: channel.port2,
+                secondaryTransport: this.secondaryTransportConfig,
                 parentWindowId: myWindowId,
                 appName, clientId, clientType
             }
@@ -153,6 +171,8 @@ export class PortsBridge {
         if (clientType === "child") {
             this.clients[clientId] = source;
         }
+
+        this.allPorts[clientId] = channel.port1;
 
         source.postMessage(message, origin, [channel.port2]);
     }
@@ -177,12 +197,17 @@ export class PortsBridge {
         source.postMessage(message, origin);
     }
 
-    private removeClient(clientId: string, announce?: boolean): void {
+    private removeClient(clientId: string, announce?: boolean, preservePort?: boolean): void {
         if (!clientId) {
             return;
         }
+
         if (this.clients[clientId]) {
             delete this.clients[clientId];
+        }
+
+        if (this.allPorts[clientId] && !preservePort) {
+            delete this.allPorts[clientId];
         }
 
         if (announce) {

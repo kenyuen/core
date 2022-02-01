@@ -129,6 +129,10 @@ export default class WS implements Transport {
             retryInterval = this.settings.reconnectInterval;
         }
 
+        if (typeof retriesLeft === "undefined") {
+            retriesLeft = this.settings.reconnectAttempts;
+        }
+
         if (retriesLeft !== undefined) {
             if (retriesLeft === 0) {
                 this.notifyForSocketState(

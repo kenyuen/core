@@ -6,7 +6,9 @@ export const Glue42CoreMessageTypes = {
     platformUnload: { name: "platformUnload" },
     clientUnload: { name: "clientUnload" },
     parentPing: { name: "parentPing" },
-    parentReady: { name: "parentReady" }
+    parentReady: { name: "parentReady" },
+    gatewayDisconnect: { name: "gatewayDisconnect" },
+    gatewayInternalConnect: { name: "gatewayInternalConnect" }
 };
 
 export const GlueWebPlatformControlName = "T42.Web.Platform.Control";

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { WebWindowModel } from "../windows/webWindow";
 import { LibController, LibDomains, ParsedConfig } from "./types";
 import { WindowsController } from "../windows/controller";
@@ -19,6 +20,8 @@ import { ExtController } from "../extension/controller";
 import { EventsDispatcher } from "./dispatcher";
 
 export class IoC {
+    private _actualWindowId: string;
+    private _publicWindowId: string;
     private _webConfig!: ParsedConfig;
     private _windowsControllerInstance!: WindowsController;
     private _appManagerControllerInstance!: AppManagerController;
@@ -42,7 +45,26 @@ export class IoC {
         extension: this.extensionController
     }
 
-    constructor(private readonly coreGlue: Glue42Core.GlueCore) { }
+    constructor(private readonly coreGlue: Glue42Core.GlueCore) {
+        this._publicWindowId = (coreGlue as any).connection.transport.publicWindowId;
+        this._actualWindowId = coreGlue.interop.instance.windowId as string;
+    }
+
+    public get publicWindowId(): string {
+        if (!this._publicWindowId) {
+            throw new Error("Accessing undefined public window id.");
+        }
+
+        return this._publicWindowId;
+    }
+
+    public get actualWindowId(): string {
+        if (!this._actualWindowId) {
+            throw new Error("Accessing undefined actual window id.");
+        }
+
+        return this._actualWindowId;
+    }
 
     public get windowsController(): WindowsController {
         if (!this._windowsControllerInstance) {
@@ -123,7 +145,7 @@ export class IoC {
 
         return this._bridgeInstance;
     }
-    
+
     public get config(): ParsedConfig {
         return this._webConfig;
     }

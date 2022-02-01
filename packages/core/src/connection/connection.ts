@@ -1,12 +1,14 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
     default as CallbackFactory,
     CallbackRegistry,
+    UnsubscribeFunction,
 } from "callback-registry";
 import {
     GW3Protocol,
     Transport,
     ConnectionSettings,
-    Identity,
+    Identity
 } from "./types";
 import { Logger } from "../logger/logger";
 
@@ -18,6 +20,8 @@ import GW3ProtocolImpl from "./protocols/gw3";
 import { MessageReplayerImpl } from "./replayer";
 import timer from "../utils/timer";
 import WebPlatformTransport from "./transports/webPlatform";
+import { waitForInvocations } from "../utils/wait-for";
+import { PromisePlus } from "../utils/promise-plus";
 
 /**
  * A template for gateway connections - this is extended from specific protocols and transports.
@@ -44,6 +48,15 @@ export default class Connection implements Glue42Core.Connection.API {
     private isTrace = false;
     private transport: Transport;
 
+    private _defaultTransport: Transport;
+    private _defaultAuth!: Glue42Core.Auth;
+
+    private _targetTransport: Transport | undefined;
+    private _targetAuth: Glue42Core.Auth | undefined;
+
+    private _swapTransport = false;
+    private _transportSubscriptions: UnsubscribeFunction[] = [];
+
     public get protocolVersion() {
         return this.protocol?.protocolVersion;
     }
@@ -69,10 +82,58 @@ export default class Connection implements Glue42Core.Connection.API {
         logger.debug(`starting with ${this.transport.name()} transport`);
 
         this.protocol = new GW3ProtocolImpl(this, settings, logger.subLogger("protocol"));
-        this.transport.onConnectedChanged(
+        const unsubConnectionChanged = this.transport.onConnectedChanged(
+
             this.handleConnectionChanged.bind(this)
         );
-        this.transport.onMessage(this.handleTransportMessage.bind(this));
+        const unsubOnMessage = this.transport.onMessage(this.handleTransportMessage.bind(this));
+
+        this._transportSubscriptions.push(unsubConnectionChanged);
+        this._transportSubscriptions.push(unsubOnMessage);
+
+        this._defaultTransport = this.transport;
+
+        // todo: enable this conditionally?
+        this._defaultTransport.onMessage(this.handleDefaultTransportSwitchRequests.bind(this));
+    }
+
+    public async switchTransport(settings: Glue42Core.Connection.TransportSwitchSettings): Promise<{ success: boolean }> {
+        if (!settings || typeof settings !== "object") {
+            throw new Error("Cannot switch transports, because the settings are missing or invalid.");
+        }
+
+        if (typeof settings.type === "undefined") {
+            throw new Error("Cannot switch the transport, because the type is not defined");
+        }
+
+        this._targetTransport = settings.type === "secondary" ? this.getNewSecondaryTransport(settings) : this._defaultTransport;
+
+        this._targetAuth = settings.type === "secondary" ? this.getNewSecondaryAuth(settings) : this._defaultAuth;
+
+        const verifyPromise = this.verifyConnection();
+
+        this._swapTransport = true;
+
+        await this.transport.close();
+
+        try {
+            await verifyPromise;
+
+            return { success: true };
+        } catch (error) {
+            // the switch was not successful, returning to the default transport
+            await this.switchTransport({ type: "default" });
+
+            return { success: false };
+        }
+    }
+
+    public onLibReAnnounced(callback: (lib: { name: "interop" | "contexts" }) => void): UnsubscribeFunction {
+        return this.registry.add("libReAnnounced", callback);
+    }
+
+    public setLibReAnnounced(lib: { name: "interop" | "contexts" }): void {
+        this.registry.execute("libReAnnounced", lib);
     }
 
     public send(message: object, options?: Glue42Core.Connection.SendMessageOptions): Promise<void> {
@@ -133,6 +194,16 @@ export default class Connection implements Glue42Core.Connection.API {
     }
 
     public async login(authRequest: Glue42Core.Auth, reconnect?: boolean): Promise<Identity> {
+
+        if (!this._defaultAuth) {
+            this._defaultAuth = authRequest;
+        }
+
+        if (this._swapTransport) {
+            const newAuth = this.transportSwap();
+            authRequest = newAuth ?? authRequest;
+        }
+
         // open the protocol in case it was closed by explicity logout
         await this.transport.open();
         timer("connection").mark("transport-opened");
@@ -227,5 +298,82 @@ export default class Connection implements Glue42Core.Connection.API {
         }
 
         this.distributeMessage(msgObj.msg, msgObj.msgType);
+    }
+
+    private verifyConnection(): Promise<void> {
+
+        return PromisePlus<void>((resolve) => {
+            // eslint-disable-next-line prefer-const
+            let unsub: UnsubscribeFunction;
+
+            const ready = waitForInvocations(2, () => {
+                if (unsub) {
+                    unsub();
+                }
+                resolve();
+            });
+
+            unsub = this.onLibReAnnounced((lib) => {
+                if (lib.name === "interop") {
+                    return ready();
+                }
+
+                if (lib.name === "contexts") {
+                    return ready();
+                }
+            });
+        }, 10000, "Transport switch timed out waiting for all libraries to be re-announced");
+    }
+
+    private getNewSecondaryTransport(settings: Glue42Core.Connection.TransportSwitchSettings): Transport {
+
+        if (!settings.transportConfig?.url) {
+            throw new Error("Missing secondary transport URL.");
+        }
+
+        return new WS(Object.assign({}, this.settings, { ws: settings.transportConfig.url, reconnectAttempts: 1 }), this.logger.subLogger("ws-secondary"));
+    }
+
+    private getNewSecondaryAuth(settings: Glue42Core.Connection.TransportSwitchSettings): Glue42Core.Auth {
+        if (!settings.transportConfig?.auth) {
+            throw new Error("Missing secondary transport auth information.");
+        }
+
+        return settings.transportConfig.auth;
+    }
+
+    private transportSwap(): Glue42Core.Auth | undefined {
+        this._swapTransport = false;
+
+        if (!this._targetTransport || !this._targetAuth) {
+            this.logger.warn(`Error while switching transports - either the target transport or auth is not defined: transport defined -> ${!!this._defaultTransport}, auth defined -> ${!!this._targetAuth}. Staying on the current one.`);
+            return;
+        }
+
+        this._transportSubscriptions.forEach((unsub) => unsub());
+        this._transportSubscriptions = [];
+
+        this.transport = this._targetTransport;
+
+        const unsubConnectionChanged = this.transport.onConnectedChanged(
+            this.handleConnectionChanged.bind(this)
+        );
+
+        const unsubOnMessage = this.transport.onMessage(this.handleTransportMessage.bind(this));
+
+        this._transportSubscriptions.push(unsubConnectionChanged);
+        this._transportSubscriptions.push(unsubOnMessage);
+
+        return this._targetAuth;
+    }
+
+    private handleDefaultTransportSwitchRequests(msg: string | object): void {
+        if (typeof msg === "string") {
+            return;
+        }
+
+        if ((msg as any).type === "transportSwitchRequest") {
+            this.switchTransport((msg as any).switchSettings);
+        }
     }
 }

@@ -21,7 +21,7 @@ export default function (instance: Glue42Core.AGM.Instance, connection: Connecti
     const server = new ServerProtocol(session, clientRepository, serverRepository, logger.subLogger("server"));
     const client = new ClientProtocol(session, clientRepository, logger.subLogger("client"));
 
-    function handleReconnect() {
+    async function handleReconnect(): Promise<void> {
         // we're reconnecting
         logger.info("reconnected - will replay registered methods and subscriptions");
 
@@ -31,7 +31,7 @@ export default function (instance: Glue42Core.AGM.Instance, connection: Connecti
             const params = Object.assign({}, sub.params);
             // remove handlers, otherwise they will be added twice
             logger.info(`trying to re-subscribe to method ${methodInfo.name}`);
-            interop.client.subscribe(methodInfo, params, undefined, undefined, sub);
+            await interop.client.subscribe(methodInfo, params, undefined, undefined, sub);
         }
 
         // server side
@@ -44,11 +44,11 @@ export default function (instance: Glue42Core.AGM.Instance, connection: Connecti
             logger.info(`re-publishing method ${def.name}`);
             if (method.stream) {
                 // streaming method
-                interop.server.createStream(def, method.streamCallbacks, undefined, undefined, method.stream);
+                await interop.server.createStream(def, method.streamCallbacks, undefined, undefined, method.stream);
             } else if (method.theFunction && method.theFunction.userCallback) {
-                interop.register(def, method.theFunction.userCallback);
+                await interop.register(def, method.theFunction.userCallback);
             } else if (method.theFunction && method.theFunction.userCallbackAsync) {
-                interop.registerAsync(def, method.theFunction.userCallbackAsync);
+                await interop.registerAsync(def, method.theFunction.userCallbackAsync);
             }
         }
     }
@@ -69,7 +69,7 @@ export default function (instance: Glue42Core.AGM.Instance, connection: Connecti
         clientRepository.addServer(instance, connection.peerId);
 
         if (reconnect) {
-            handleReconnect();
+            handleReconnect().then(() => connection.setLibReAnnounced({ name: "interop" }));
         } else {
             handleInitialJoin();
         }

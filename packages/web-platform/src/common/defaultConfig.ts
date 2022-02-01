@@ -28,6 +28,7 @@ export const defaultPlatformConfig: InternalPlatformConfig = {
             level: "info"
         }
     },
+    connection: {},
     glue: {},
     environment: {}
 };

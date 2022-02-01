@@ -1,15 +1,23 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Glue42Core } from "@glue42/core";
 import { libDomainDecoder } from "../shared/decoders";
 import { PromisePlus } from "../shared/promise-plus";
 import { BridgeOperation, LibController, LibDomains } from "../shared/types";
 import { GlueClientControlName, GlueWebPlatformControlName, GlueWebPlatformStreamName } from "./constants";
-// todo - subscribe for connection state?
+
 export class GlueBridge {
     private readonly platformMethodTimeoutMs = 10000;
     private controllers!: { [key in LibDomains]: LibController };
     private sub!: Glue42Core.AGM.Subscription;
+    private webPlatformTransport: any;
 
-    constructor(private readonly coreGlue: Glue42Core.GlueCore) { }
+    constructor(private readonly coreGlue: Glue42Core.GlueCore) {
+        if ((coreGlue as any).connection.transport.name() !== "web-platform") {
+            throw new Error("Cannot initiate the Glue Web Bridge, because the initial connection was not handled by a Web Platform transport.");
+        }
+
+        this.webPlatformTransport = (coreGlue as any).connection.transport;
+    }
 
     public get contextLib(): Glue42Core.Contexts.API {
         return this.coreGlue.contexts;
@@ -21,6 +29,10 @@ export class GlueBridge {
 
     public async start(controllers: { [key in LibDomains]: LibController }): Promise<void> {
         this.controllers = controllers;
+
+        if (this.webPlatformTransport.secondaryTransportConfig) {
+            await this.coreGlue.connection.switchTransport(this.webPlatformTransport.secondaryTransportConfig);
+        }
 
         await Promise.all([
             this.checkWaitMethod(GlueWebPlatformControlName),

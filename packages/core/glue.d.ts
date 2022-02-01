@@ -1073,6 +1073,15 @@ export namespace Glue42Core {
             authToken(): Promise<string>;
 
             reconnect(): Promise<void>;
+
+            /** @ignore */
+            switchTransport(settings: TransportSwitchSettings): Promise<{ success: boolean }>;
+
+            /** @ignore */
+            onLibReAnnounced(callback: (lib: { name: "interop" | "contexts" }) => void): UnsubscribeFunction;
+
+            /** @ignore */
+            setLibReAnnounced(lib: { name: "interop" | "contexts" }): void;
         }
         /**
          * GW3 domain session
@@ -1119,6 +1128,15 @@ export namespace Glue42Core {
             loggedIn(callback: (() => void)): void;
             connected(callback: (server: string) => void): void;
             disconnected(callback: () => void): void;
+        }
+
+        /** @ignore */
+        export interface TransportSwitchSettings {
+            type: "default" | "secondary";
+            transportConfig?: {
+                auth: Glue42Core.Auth;
+                url: string;
+            };
         }
 
         /** @ignore */

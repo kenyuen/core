@@ -38,6 +38,7 @@ export interface InternalPlatformConfig {
     };
     serviceWorker?: Glue42WebPlatform.ServiceWorker.Config;
     workspaces?: Glue42WebPlatform.Workspaces.Config;
+    connection: Glue42WebPlatform.Connection.Config;
     environment: any;
 }
 

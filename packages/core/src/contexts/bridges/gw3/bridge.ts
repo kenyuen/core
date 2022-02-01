@@ -231,7 +231,7 @@ export class GW3Bridge implements ContextBridge {
                 return;
             }
 
-            this.reInitiateState();
+            this.reInitiateState().then(() => this._connection.setLibReAnnounced({ name: "contexts" }));
         });
 
         // TODO: logging, validation and error handling
@@ -431,8 +431,8 @@ export class GW3Bridge implements ContextBridge {
         }
 
         // 2)
-        if (contextData && !contextData.hasCallbacks()) {
-            return new Promise<any>(async (resolve, _) => {
+        if (contextData && (!contextData.hasCallbacks() || !contextData.hasReceivedSnapshot)) {
+            return new Promise<any>((resolve) => {
                 this.subscribe(name, (data: any, _d: any, _r: string[], un: ContextSubscriptionKey) => {
                     this.unsubscribe(un);
                     resolve(data);
@@ -1012,7 +1012,7 @@ export class GW3Bridge implements ContextBridge {
         this._contextNameToData = {};
     }
 
-    private reInitiateState(): void {
+    private async reInitiateState(): Promise<void> {
         this.subscribeToContextCreatedMessages();
 
         this.subscribeToContextUpdatedMessages();
@@ -1041,21 +1041,26 @@ export class GW3Bridge implements ContextBridge {
                 }
             });
 
-        Promise.all(this._contextsSubscriptionsCache.map((subscription) => this.subscribe(subscription.contextName, subscription.callback, subscription.subKey)))
-            .then(() => {
-                Object.keys(this._contextsTempCache).forEach((ctxName) => {
-                    const lastKnownData = this._contextsTempCache[ctxName];
+        await Promise.all(this._contextsSubscriptionsCache.map((subscription) => this.subscribe(subscription.contextName, subscription.callback, subscription.subKey)));
 
-                    const existingName = this.all().some((name) => name === ctxName);
+        for (const ctxName in this._contextsTempCache) {
 
-                    if (existingName) {
-                        return this.update(ctxName, lastKnownData);
-                    }
+            if (!this._contextsTempCache[ctxName]) {
+                continue;
+            }
 
-                    this.set(ctxName, lastKnownData);
-                });
+            const lastKnownData = this._contextsTempCache[ctxName];
 
-                this._contextsTempCache = {};
-            });
+            const existingName = this.all().some((name) => name === ctxName);
+
+            if (existingName) {
+                await this.update(ctxName, lastKnownData);
+            }
+
+            await this.set(ctxName, lastKnownData);
+        }
+
+        this._contextsTempCache = {};
+
     }
 }

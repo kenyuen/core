@@ -81,6 +81,10 @@ export class PlatformController {
         }
 
         this.serviceWorkerController.notifyReady();
+
+        if (config.connection.secondaryConnection) {
+            this.glueController.startSecondaryConnectionTrack(config.connection.secondaryConnection);
+        }
     }
 
     public async connectExtClient(client: any, port: any): Promise<void> {
