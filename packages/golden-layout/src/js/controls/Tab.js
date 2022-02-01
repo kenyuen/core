@@ -84,7 +84,7 @@ lm.utils.copy(lm.controls.Tab.prototype, {
 	},
 
 	onCloseClick: undefined,
-	pin: function () {
+	pin: function (index) {
 		if (this.isPinned) {
 			return;
 		}
@@ -92,8 +92,14 @@ lm.utils.copy(lm.controls.Tab.prototype, {
 		this.closeElement.hide();
 
 		const currentIndex = this.header.tabs.indexOf(this);
-		const lastPinnedTabIndex = this._getLastIndexOfPinnedTab();
-		this.header.moveTab(currentIndex, lastPinnedTabIndex + 1);
+		const lastPinnedTabIndex = this.header._getLastIndexOfPinnedTab();
+
+		let newIndex = lastPinnedTabIndex + 1;
+		if (typeof index === "number") {
+			newIndex = Math.min(index, lastPinnedTabIndex + 1);;
+		}
+
+		this.header.moveTab(currentIndex, newIndex);
 		this.element.addClass('lm_pinned');
 		this.isPinned = true;
 	},
@@ -105,7 +111,7 @@ lm.utils.copy(lm.controls.Tab.prototype, {
 		this.closeElement.show();
 
 		const currentIndex = this.header.tabs.indexOf(this);
-		const lastPinnedTabIndex = this._getLastIndexOfPinnedTab();
+		const lastPinnedTabIndex = this.header._getLastIndexOfPinnedTab();
 		if (currentIndex != lastPinnedTabIndex) {
 			this.header.moveTab(currentIndex, lastPinnedTabIndex);
 		}
@@ -245,10 +251,16 @@ lm.utils.copy(lm.controls.Tab.prototype, {
 	},
 	_onReorderStop: function (x, y) {
 		const tabIndex = this.header.tabs.indexOf(this);
-		const lastPinnedTabIndex = this._getLastIndexOfPinnedTab((t) => t != this);
+		const lastPinnedTabIndex = this.header._getLastIndexOfPinnedTab((t) => t != this);
 
+		// Triggered when a pinned tab is put after an unpinned one
 		if (this.isPinned && lastPinnedTabIndex + 1 < tabIndex) {
 			this.header.moveTab(tabIndex, lastPinnedTabIndex + 1);
+		}
+
+		// Triggered when a unpinned tab is put before a pinned one
+		if (!this.isPinned && tabIndex < lastPinnedTabIndex) {
+			this.header.moveTab(tabIndex, lastPinnedTabIndex);
 		}
 
 		this.element.css("left", "");
@@ -309,19 +321,5 @@ lm.utils.copy(lm.controls.Tab.prototype, {
 	 */
 	_onCloseMousedown: function (event) {
 		event.stopPropagation();
-	},
-	_getLastIndexOfPinnedTab(filter) {
-		const lastPinnedTab = this.header.tabs.reduce((acc, t) => {
-			if (t.isPinned && (typeof filter != "function" || filter(t))) {
-				return t;
-			}
-			return acc;
-		}, undefined);
-
-		if (!lastPinnedTab) {
-			return -1;
-		}
-
-		return this.header.tabs.indexOf(lastPinnedTab);
 	}
 });

@@ -154,7 +154,7 @@ lm.utils.copy(lm.items.Stack.prototype, {
 
 			const pinnedItems = this.contentItems.filter(t => t.config.workspacesConfig.isPinned);
 
-			pinnedItems.forEach((pi)=>{
+			pinnedItems.forEach((pi) => {
 				pi.tab.pin();
 			});
 		}
@@ -187,12 +187,19 @@ lm.utils.copy(lm.items.Stack.prototype, {
 
 	addChild: function (contentItem, index, activate = true) {
 		contentItem = this.layoutManager._$normalizeContentItem(contentItem, this);
+		const lastPinnedIndex = this.header._getLastIndexOfPinnedTab();
+
+		const isPinned = contentItem.config && contentItem.config.workspacesConfig && contentItem.config.workspacesConfig.isPinned;
+		if (index >= 0 && index <= lastPinnedIndex && !isPinned) {
+			index = lastPinnedIndex + 1;
+		}
+
 		lm.items.AbstractContentItem.prototype.addChild.call(this, contentItem, index);
 		this.childElementContainer.append(contentItem.element);
 		this.header.createTab(contentItem, index);
 
-		if (contentItem.config.workspacesConfig.isPinned) {
-			contentItem.tab.pin();
+		if (isPinned) {
+			contentItem.tab.pin(index);
 		}
 
 		if ($(this.layoutManager.container).is(":visible") && activate) {
