@@ -41,7 +41,7 @@ describe("all() Should", () => {
     });
 
     it("contain the new context after a new context is updated from another app", async () => {
-        await secondApp.updateContext(contextName, { test: 42 });
+        await secondApp.contexts.update(contextName, { test: 42 });
 
         const allContexts = glue.contexts.all();
 
@@ -51,7 +51,7 @@ describe("all() Should", () => {
     });
 
     it("contain the new context after a new context is set from the same app", async () => {
-        await secondApp.setContext(contextName, { test: 42 });
+        await secondApp.contexts.set(contextName, { test: 42 });
 
         const allContexts = glue.contexts.all();
 

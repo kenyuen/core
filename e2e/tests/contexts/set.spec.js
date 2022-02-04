@@ -43,7 +43,7 @@ describe("set() Should", () => {
         it(`set the context between 2 applications with ${context.type}`, async () => {
             await glue.contexts.set(contextName, context);
 
-            const contextFromSecondApp = await secondApp.getContext(contextName);
+            const contextFromSecondApp = await secondApp.contexts.get(contextName);
 
             expect(contextFromSecondApp).to.eql(context);
 
@@ -57,7 +57,7 @@ describe("set() Should", () => {
             await glue.contexts.set(contextName, initialContext);
             await glue.contexts.set(contextName, context);
 
-            const contextFromSecondApp = await secondApp.getContext(contextName);
+            const contextFromSecondApp = await secondApp.contexts.get(contextName);
 
             expect(contextFromSecondApp.isSaved).to.be.undefined;
         });
@@ -77,7 +77,7 @@ describe("set() Should", () => {
         await glue.contexts.set(contextName, firstContext);
         await glue.contexts.set(contextName, secondContext);
 
-        const contextFromSecondApp = await secondApp.getContext(contextName);
+        const contextFromSecondApp = await secondApp.contexts.get(contextName);
 
         expect(contextFromSecondApp).to.eql(secondContext);
     });
@@ -99,7 +99,7 @@ describe("set() Should", () => {
         await glue.contexts.set(contextName, firstContext);
         await glue.contexts.set(contextName, secondContext);
 
-        const contextFromSecondApp = await secondApp.getContext(contextName);
+        const contextFromSecondApp = await secondApp.contexts.get(contextName);
 
         expect(contextFromSecondApp).to.eql(secondContext);
     });
@@ -117,7 +117,7 @@ describe("set() Should", () => {
         await glue.contexts.set(contextName, firstContext);
         await glue.contexts.set(contextName, secondContext);
 
-        const contextFromSecondApp = await secondApp.getContext(contextName);
+        const contextFromSecondApp = await secondApp.contexts.get(contextName);
 
         expect(contextFromSecondApp).to.eql(secondContext);
     });
@@ -139,7 +139,7 @@ describe("set() Should", () => {
         await glue.contexts.set(contextName, firstContext);
         await glue.contexts.set(contextName, secondContext);
 
-        const contextFromSecondApp = await secondApp.getContext(contextName);
+        const contextFromSecondApp = await secondApp.contexts.get(contextName);
 
         expect(contextFromSecondApp).to.eql(secondContext);
     });

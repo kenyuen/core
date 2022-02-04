@@ -53,13 +53,16 @@ export namespace Gtf {
 
         stop(): Promise<void>;
 
-        setContext(ctxName: string, ctxData: any): Promise<void>;
+        contexts: {
+            set(ctxName: string, ctxData: any): Promise<void>;
+    
+            update(ctxName: string, ctxData: any): Promise<void>;
+    
+            get(ctxName: string): Promise<any>;
+    
+            all(): Promise<string[]>;
+        }
 
-        updateContext(ctxName: string, ctxData: any): Promise<void>;
-
-        getContext(ctxName: string): Promise<any>;
-
-        getAllContextNames(): Promise<string[]>;
     }
 
     export interface Core {
@@ -80,6 +83,12 @@ export namespace Gtf {
 
     export interface Channels {
         resetContexts(): Promise<void[]>;
+    }
+
+    export interface Contexts {
+        getContextName(): string;
+        
+        generateComplexObject(complexity: number): { superNestedObject: any, numberArr: number[], stringArr: string[], objectArr: any[], singleObject: any, dateArr: Date[] };
     }
 
     export interface AppManager {

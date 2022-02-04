@@ -16,24 +16,24 @@ describe("subscribe() Should", () => {
 
     it("be invoked when a context is updated and is invoked after the context was created", (done) => {
         const sampleContext = { test: 1 };
-        secondApp.updateContext(contextName, sampleContext).then(() => {
+        secondApp.contexts.update(contextName, sampleContext).then(() => {
             return glue.contexts.subscribe(contextName, () => {
                 done();
             });
         }).then(() => {
-            return secondApp.updateContext(contextName, { test: 2 });
+            return secondApp.contexts.update(contextName, { test: 2 });
         }).catch(done);;
     });
 
     it("be invoked when a context is set and is invoked after the context was created", (done) => {
         const sampleContext = { test: 1 };
-        secondApp.setContext(contextName, sampleContext).then(() => {
+        secondApp.contexts.set(contextName, sampleContext).then(() => {
             return glue.contexts.subscribe(contextName, () => {
                 done();
             });
 
         }).then(() => {
-            return secondApp.setContext(contextName, { test: 2 });
+            return secondApp.contexts.set(contextName, { test: 2 });
         }).catch(done);;
     });
 
@@ -41,7 +41,7 @@ describe("subscribe() Should", () => {
         glue.contexts.subscribe(contextName, () => {
             done();
         }).then(() => {
-            return secondApp.updateContext(contextName, { test: 2 });
+            return secondApp.contexts.update(contextName, { test: 2 });
         }).catch(done);;
     });
 
@@ -49,14 +49,14 @@ describe("subscribe() Should", () => {
         glue.contexts.subscribe(contextName, () => {
             done();
         }).then(() => {
-            return secondApp.setContext(contextName, { test: 2 });
+            return secondApp.contexts.set(contextName, { test: 2 });
         }).catch(done);;
     });
 
     it("be invoked with the correct context when a context is updated and is invoked after the context was created", (done) => {
         const sampleContext = { test: 1 };
         const secondContext = { test: 2 };
-        secondApp.updateContext(contextName, sampleContext).then(() => {
+        secondApp.contexts.update(contextName, sampleContext).then(() => {
             return glue.contexts.subscribe(contextName, (c) => {
                 if (c.test === secondContext.test) {
                     done();
@@ -64,20 +64,20 @@ describe("subscribe() Should", () => {
             });
 
         }).then(() => {
-            secondApp.updateContext(contextName, secondContext).catch(done);;
+            secondApp.contexts.update(contextName, secondContext).catch(done);;
         }).catch(done);;
     });
 
     it("be invoked with the correct when a context is set and is invoked after the context was created", (done) => {
         const sampleContext = { test: 1 };
         const secondContext = { test: 2 };
-        secondApp.setContext(contextName, sampleContext).then(() => {
+        secondApp.contexts.set(contextName, sampleContext).then(() => {
             glue.contexts.subscribe(contextName, (c) => {
                 if (c.test === secondContext.test) {
                     done();
                 }
             }).then(() => {
-                secondApp.setContext(contextName, secondContext).catch(done);;
+                secondApp.contexts.set(contextName, secondContext).catch(done);;
             }).catch(done);;
 
         }).catch(done);;
@@ -90,7 +90,7 @@ describe("subscribe() Should", () => {
                 done();
             }
         }).then((unsub) => {
-            return secondApp.updateContext(contextName, sampleContext);
+            return secondApp.contexts.update(contextName, sampleContext);
         }).catch(done);;
     });
 
@@ -101,7 +101,7 @@ describe("subscribe() Should", () => {
                 done();
             }
         }).then((unsub) => {
-            return secondApp.setContext(contextName, sampleContext);
+            return secondApp.contexts.set(contextName, sampleContext);
         }).catch(done);
     });
 
@@ -115,7 +115,7 @@ describe("subscribe() Should", () => {
         }).then((unsub) => {
             unsub();
 
-            return secondApp.setContext(contextName, { test: 1 });
+            return secondApp.contexts.set(contextName, { test: 1 });
         }).catch(done);
     });
 });

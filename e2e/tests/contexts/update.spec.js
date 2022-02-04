@@ -43,7 +43,7 @@ describe("update() Should", () => {
         it(`update the context between 2 applications with ${context.type}`, async () => {
             await glue.contexts.update(contextName, context);
 
-            const contextFromSecondApp = await secondApp.getContext(contextName);
+            const contextFromSecondApp = await secondApp.contexts.get(contextName);
 
             expect(contextFromSecondApp).to.eql(context);
 
@@ -57,7 +57,7 @@ describe("update() Should", () => {
             await glue.contexts.update(contextName, initialContext);
             await glue.contexts.update(contextName, context);
 
-            const contextFromSecondApp = await secondApp.getContext(contextName);
+            const contextFromSecondApp = await secondApp.contexts.get(contextName);
 
             expect(contextFromSecondApp.isSaved).to.be.true;
         });
@@ -77,7 +77,7 @@ describe("update() Should", () => {
         await glue.contexts.update(contextName, firstContext);
         await glue.contexts.update(contextName, secondContext);
 
-        const contextFromSecondApp = await secondApp.getContext(contextName);
+        const contextFromSecondApp = await secondApp.contexts.get(contextName);
 
         expect(contextFromSecondApp.a).to.eql(firstContext.a);
         expect(contextFromSecondApp.b).to.eql(secondContext.b);
@@ -103,7 +103,7 @@ describe("update() Should", () => {
         await glue.contexts.update(contextName, firstContext);
         await glue.contexts.update(contextName, secondContext);
 
-        const contextFromSecondApp = await secondApp.getContext(contextName);
+        const contextFromSecondApp = await secondApp.contexts.get(contextName);
 
         expect(contextFromSecondApp.first.a).to.eql(firstContext.first.a);
         expect(contextFromSecondApp.first.b).to.eql(secondContext.first.b);
@@ -124,7 +124,7 @@ describe("update() Should", () => {
         await glue.contexts.update(contextName, firstContext);
         await glue.contexts.update(contextName, secondContext);
 
-        const contextFromSecondApp = await secondApp.getContext(contextName);
+        const contextFromSecondApp = await secondApp.contexts.get(contextName);
 
         expect(contextFromSecondApp.a).to.eql(firstContext.a);
         expect(contextFromSecondApp.b).to.eql([...secondContext.b, ...firstContext.b]);
@@ -149,7 +149,7 @@ describe("update() Should", () => {
         await glue.contexts.update(contextName, firstContext);
         await glue.contexts.update(contextName, secondContext);
 
-        const contextFromSecondApp = await secondApp.getContext(contextName);
+        const contextFromSecondApp = await secondApp.contexts.get(contextName);
 
         expect(contextFromSecondApp.first.a).to.eql(firstContext.first.a);
         expect(contextFromSecondApp.first.b).to.eql([...secondContext.first.b, ...firstContext.first.b]);

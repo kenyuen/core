@@ -198,48 +198,52 @@ export class GtfApp implements Gtf.App {
         await this.myInstance.stop();
     }
 
-    public async setContext(ctxName: string, ctxData: any): Promise<void> {
-        const controlArgs: ControlArgs = {
-            operation: "setContext",
-            params: {
-                name: ctxName,
-                data: ctxData
+    public get contexts() {
+        return {
+            all: (): Promise<string[]> => {
+                const controlArgs: ControlArgs = {
+                    operation: "getAllContextNames",
+                    params: {}
+                };
+        
+                return this.sendControl<string[]>(controlArgs);
+            },
+
+            set: (ctxName: string, ctxData: any): Promise<void> => {
+                const controlArgs: ControlArgs = {
+                    operation: "setContext",
+                    params: {
+                        name: ctxName,
+                        data: ctxData
+                    }
+                };
+        
+                return this.sendControl<void>(controlArgs);
+            },
+
+            update: (ctxName: string, ctxData: any): Promise<void> => {
+                const controlArgs: ControlArgs = {
+                    operation: "updateContext",
+                    params: {
+                        name: ctxName,
+                        data: ctxData
+                    }
+                };
+        
+                return this.sendControl<void>(controlArgs);
+            },
+            
+            get: (ctxName: string): Promise<any> => {
+                const controlArgs: ControlArgs = {
+                    operation: "getContext",
+                    params: {
+                        name: ctxName
+                    }
+                };
+        
+                return this.sendControl<any>(controlArgs);
             }
         };
-
-        return this.sendControl<void>(controlArgs);
-    }
-
-    public async updateContext(ctxName: string, ctxData: any): Promise<void> {
-        const controlArgs: ControlArgs = {
-            operation: "updateContext",
-            params: {
-                name: ctxName,
-                data: ctxData
-            }
-        };
-
-        return this.sendControl<void>(controlArgs);
-    }
-
-    public async getContext(ctxName: string): Promise<any> {
-        const controlArgs: ControlArgs = {
-            operation: "getContext",
-            params: {
-                name: ctxName
-            }
-        };
-
-        return this.sendControl<any>(controlArgs);
-    }
-
-    public async getAllContextNames(): Promise<string[]> {
-        const controlArgs: ControlArgs = {
-            operation: "getAllContextNames",
-            params: {}
-        };
-
-        return this.sendControl<string[]>(controlArgs);
     }
 
     private async sendControl<T>(controlArgs: ControlArgs): Promise<T> {

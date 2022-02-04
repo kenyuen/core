@@ -40,7 +40,7 @@ describe("get() Should", () => {
 
     contextsForTesting.forEach((context) => {
         it(`get the context between 2 applications with ${context.type}`, async () => {
-            await secondApp.setContext(contextName, context);
+            await secondApp.contexts.set(contextName, context);
 
             const myContext = await glue.contexts.get(contextName);
 
@@ -53,8 +53,8 @@ describe("get() Should", () => {
                 isSaved: true
             };
 
-            await secondApp.setContext(contextName, initialContext);
-            await secondApp.setContext(contextName, context);
+            await secondApp.contexts.set(contextName, initialContext);
+            await secondApp.contexts.set(contextName, context);
 
             const myContext = await glue.contexts.get(contextName);
 
@@ -62,7 +62,7 @@ describe("get() Should", () => {
         });
 
         it(`update the context between 2 applications with ${context.type}`, async () => {
-            await secondApp.updateContext(contextName, context);
+            await secondApp.contexts.update(contextName, context);
 
             const myContext = await glue.contexts.get(contextName);
 
@@ -75,8 +75,8 @@ describe("get() Should", () => {
                 isSaved: true
             };
 
-            await secondApp.updateContext(contextName, initialContext);
-            await secondApp.updateContext(contextName, context);
+            await secondApp.contexts.update(contextName, initialContext);
+            await secondApp.contexts.update(contextName, context);
 
             const myContext = await glue.contexts.get(contextName);
 
