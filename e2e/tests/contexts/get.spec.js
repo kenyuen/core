@@ -51,7 +51,7 @@ describe('get(), ', function () {
     );
   });
 
-  describe('when manipulated by current app, ', function () {
+  describe.only('when manipulated by current app, ', function () {
     it('should throw when no arguments are passed', (done) => {
       try {
         glue.contexts.get();
@@ -248,6 +248,42 @@ describe('get(), ', function () {
           ready();
         })
         .catch((err) => done(err));
+    });
+
+    it('double get should return snapshot', (done) => {
+      const contextName = gtf.contexts.getContextName();
+      const context = gtf.contexts.generateComplexObject(10);
+
+      glue.contexts
+        .subscribe(contextName, async() => {
+          const contexts = await Promise.all([glue.contexts.get(contextName), glue.contexts.get(contextName)]);
+          expect(contexts[0]).to.eql(context);
+          expect(contexts[1]).to.eql(context);
+          done();
+        })
+        .then((unFn) => gtf.addWindowHook(unFn))
+        .then(() => glue.contexts.update(contextName, context))
+        .catch(err => done(err));
+    });
+
+    it('should return snapshot when get() is followed by subscribe()', (done) => {
+      const contextName = gtf.contexts.getContextName();
+      const context = gtf.contexts.generateComplexObject(10);
+      const ready = gtf.waitFor(2, done)
+
+       glue.contexts.subscribe(contextName, async() => {
+         const contextData = await glue.contexts.get(contextName);
+          expect(contextData).to.eql(context);
+          ready();
+
+         await glue.contexts.subscribe(contextName, (dataFromSubscribe) => {
+           expect(dataFromSubscribe).to.eql(context);
+           ready();
+         })
+       })
+        .then((unFn) => gtf.addWindowHook(unFn))
+        .then(() => glue.contexts.update(contextName, context))
+        .catch(err => done(err));
     });
   });
 
