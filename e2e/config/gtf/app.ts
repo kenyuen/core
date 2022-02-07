@@ -254,6 +254,31 @@ export class GtfApp implements Gtf.App {
 
                 return this.sendControl<any>(controlArgs);
             },
+
+            setPath: (ctxName: string, path: string, data: any): Promise<void>  => {
+                const controlArgs: ControlArgs = {
+                    operation: "setPathContext",
+                    params: {
+                        name: ctxName, 
+                        path, 
+                        data
+                    }
+                };
+
+                return this.sendControl<any>(controlArgs);
+            },
+
+            setPaths: (ctxName: string, paths: Glue42Web.Contexts.PathValue[]): Promise<void>  => {
+                const controlArgs: ControlArgs = {
+                    operation: "setPathsContext",
+                    params: {
+                        name: ctxName, 
+                        paths
+                    }
+                };
+
+                return this.sendControl<any>(controlArgs);
+            }
         };
     }
 

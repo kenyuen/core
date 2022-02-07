@@ -63,6 +63,10 @@ export namespace Gtf {
             all(): Promise<string[]>;
 
             destroy(ctxName: string): Promise<void>;
+
+            setPath(ctxName: string, path: string, data: any): Promise<void>;
+
+            setPaths(ctxName: string, paths: Glue42Web.Contexts.PathValue[]): Promise<void>
         }
 
     }
