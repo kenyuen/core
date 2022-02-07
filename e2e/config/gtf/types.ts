@@ -61,6 +61,8 @@ export namespace Gtf {
             get(ctxName: string): Promise<any>;
     
             all(): Promise<string[]>;
+
+            destroy(ctxName: string): Promise<void>;
         }
 
     }

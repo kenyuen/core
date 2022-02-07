@@ -242,7 +242,18 @@ export class GtfApp implements Gtf.App {
                 };
         
                 return this.sendControl<any>(controlArgs);
-            }
+            },
+
+            destroy: (ctxName: string): Promise<void> => {
+                const controlArgs: ControlArgs = {
+                    operation: "destroyContext",
+                    params: {
+                        name: ctxName
+                    }
+                };
+
+                return this.sendControl<any>(controlArgs);
+            },
         };
     }
 
